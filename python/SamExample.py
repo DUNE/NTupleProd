@@ -82,13 +82,15 @@ def samExample(def_name,larargs):
     consumerok = True
     while  nfiles < perfile:
       try:
-        input_uri = ifdh_handle.getNextFile( project_uri, consumer_id )
+        #input_uri = ifdh_handle.getNextFile( project_uri, consumer_id )
+        input_uri = samweb.getNextFile(processurl)['url']
         print (mytime(),"  Got input_uri from ifdh: ", input_uri)
       except Exception:
         print (mytime()," getNextFile failed ",e)
         consumerok = False
         stillfiles = False
-        ifdh_handle.setStatus(project_uri, consumer_id, "bad")
+        samweb.setProcessStatus('failed', processurl)
+        #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
         break
 
       if input_uri == "":
