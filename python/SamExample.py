@@ -72,7 +72,8 @@ def samExample(def_name,larargs):
     #cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, node=node, description=process_description, maxFiles=maxFiles, schemas=schemas)
     consumer_id = samweb.startProcess(project_uri, opts["appFamily"], opts["appName"], opts["appVersion"], node=socket.gethostname(), description=opts["process_description"], maxFiles=opts["MaxFiles"], schemas="root")
       #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
-    print (mytime(),"Got SAM consumer id:",consumer_id)
+    process_uri = samweb.makeProcessUrl(projecturl, consumer_id)
+    print (mytime(),"Got SAM consumer id:",consumer_id, process_url)
     #except Exception:
     #  print (mytime()," could not get a consumer ",e)
     #  break
@@ -81,15 +82,16 @@ def samExample(def_name,larargs):
     input_uri = ""
     consumerok = True
     while  nfiles < perfile:
+      print (" try to get a file",nfiles)
       try:
         #input_uri = ifdh_handle.getNextFile( project_uri, consumer_id )
-        input_uri = samweb.getNextFile(processurl)['url']
+        input_uri = samweb.getNextFile(process_url)['url']
         print (mytime(),"  Got input_uri from ifdh: ", input_uri)
       except Exception:
         print (mytime()," getNextFile failed ",e)
         consumerok = False
         stillfiles = False
-        samweb.setProcessStatus('failed', processurl)
+        samweb.setProcessStatus('failed',process_url )
         #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
         break
 
