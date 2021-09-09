@@ -65,7 +65,8 @@ def samExample(def_name,larargs):
     inputlist = []
 
     try:
-      consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
+      consumer_id = samweb.startProcess(projecturl=project_uri, appFamily=opts["appFamily"], appName=opts["appName"], appVersion=opts["appVersion"], deliveryLocation, node=socket.gethostname(), description=process_description, maxFiles=maxFiles, schemas="root")
+      #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
       print (mytime(),"Got SAM consumer id:",consumer_id)
     except Exception:
       print (mytime()," could not get a consumer ",e)
@@ -83,13 +84,15 @@ def samExample(def_name,larargs):
         consumerok = False
         stillfiles = False
         ifdh_handle.setStatus(project_uri, consumer_id, "bad")
-
         break
 
       if input_uri == "":
          print (mytime(),"   SAM project says there are no more files.  Quitting...")
          stillfiles = False
          break
+         
+# got a file location
+
       try:
         inputfile = ifdh_handle.fetchInput(input_uri)
 
@@ -114,7 +117,8 @@ def samExample(def_name,larargs):
         ifdh_handle.setStatus(project_uri, consumer_id, "bad")
         raise
         break
-      if os.path.exists(inputfile):
+        
+      if os.path.exists(inputfile): # doesn't work with xrootd.
           try:
             status = process(inputfile,larargs)
           except Exception:
@@ -122,6 +126,7 @@ def samExample(def_name,larargs):
             ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'failed' )
             raise
             break
+          # need to process bad status
           try:
             ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'consumed' )
           except Exception:
