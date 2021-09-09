@@ -20,13 +20,14 @@ def mytime():
   return datetime.datetime.now().strftime("%Y-%m-%d-%H%M.%S")
 
 def test():
-  larargs = "-c test.fcl -n2"
+  larargs = "-c test.fcl  "
   project_name = "PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1"
   samExample(project_name,larargs)
   
-def process(file,larargs):
-  larcommand = "lar %s -i%s"%(larargs, file)
+def process(filelist,larargs):
+  larcommand = "lar %s -s %s"%(larargs, filelist)
   print ("for now a dummy processing",larcommand)
+  return 0
   
 def startProject(def_name):
   project_name = def_name+"_"+mytime()
@@ -65,27 +66,19 @@ def samExample(def_name,larargs):
     #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
   process_url = samweb.makeProcessUrl(project_uri, consumer_id)
   print (mytime(),"Got SAM consumer id:",consumer_id, process_url)
+  consumerok = True
   
   while stillfiles:
 
     print ("stillfiles loop")
-
     nfiles = 0
-    inputlist = []
+    inputfiles = ""
+    input_uris = []
 
-    #try:
-    #cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, node=node, description=process_description, maxFiles=maxFiles, schemas=schemas)
-    consumer_id = samweb.startProcess(project_uri, opts["appFamily"], opts["appName"], opts["appVersion"], node=socket.gethostname(), description=opts["process_description"], maxFiles=opts["MaxFiles"], schemas="root")
-      #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
-    process_url = samweb.makeProcessUrl(project_uri, consumer_id)
-    print (mytime(),"Got SAM consumer id:",consumer_id, process_url)
-    #except Exception:
-    #  print (mytime()," could not get a consumer ",e)
-    #  break
-    print (mytime(),"consumer ids", consumerid)
-    #try to get the next input file
+    
+    #try to get the next chunk of input files
     input_uri = ""
-    consumerok = True
+    
     while  nfiles < perfile:
       print (" try to get a file",nfiles)
       try:
@@ -96,7 +89,7 @@ def samExample(def_name,larargs):
         print (mytime()," getNextFile failed ",e)
         consumerok = False
         stillfiles = False
-        samweb.setProcessStatus('failed',process_url )
+        samweb.setProcessStatus('bad',process_url )
         #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
         break
 
@@ -106,73 +99,68 @@ def samExample(def_name,larargs):
          break
          
 # got a file location
-
+      input_uris.append(input_uri)
       try:
-        inputfile = ifdh_handle.fetchInput(input_uri)
+        inputfile = input_uri
+        inputfilename = os.path.basename(inputfile)
         print(" got file ",inputfile)
         if inputfile == "":
           print (mytime(),"   No input file delivered, ifdh should have raised an exception " ,input_uri)
           stillfiles= False
           consumerok = False
-          samweb.setProcessStatus('failed',process_url )
+          samweb.setProcessStatus('bad',process_url )
           #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
           break
-        print (mytime(),"  Fetched input:",inputfile," space left is ",get_fs_freespace(inputfile))
-
+        print (mytime(),"  Fetched input:",inputfilename)
+  
       except Exception:
 
       #todo can we just continue?
         
         stillfiles = False
         consumerok = False
-        samweb.setProcessStatus('failed',process_url )
+        samweb.setProcessStatus('bad',process_url )
         #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
         raise
         break
         
+      nfiles = nfiles + 1
+      inputfiles += " "+inputfile
     
-        try:
-          status = process(inputfile,larargs)
-          nfiles = nfiles + 1
-        except Exception:
-          print ("processing returned",status)
-          samweb.setFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'failed' )
-          raise
-          break
-        # need to process bad status
-        
-          nfiles = nfiles + 1
+      # end of loop to gather list of files
+       
+    
+    status = process(inputfiles,larargs)
+    
+    # mark all files as bad if processing failed.
+    if status != 0:
+      for file in input_uris:
+        samweb.setFileStatus(project_uri, consumer_id, urllib.quote(file), 'skipped' )
       
+      
+    
+    
 
-    print (mytime(),"end of loop to get files from consumer: INPUTLIST ",inputlist)
+    print (mytime(),"end of loop to get files from consumer: INPUTLIST ",inputfiles)
 
     if not consumerok:
       try:
         print (mytime()," consumer not ok ", consumer_id, " try to set bad")
-        ifdh_handle.setStatus(project_uri, consumer_id, "bad")
+        samweb.setProcessStatus('failed',process_url )
+       # ifdh_handle.setStatus(project_uri, consumer_id, "bad")
       except Exception:
         print (mytime()," can't even set to bad as consumer status failed",e)
-      raise
-      break
+        raise
+        break
 
       #try to process the input files  we just got handles for
-    try:
-      print (mytime(),"     Processing files:",inputlist)
-      n_tried += len(inputlist)
-
-      #todo record status separately for each tool
-      status = 0
-      input_files = inputlist
-
-      # run it
+    
       
       
 
 
 # return status for the whole list
-      if(HACK):
-        status = 0
-
+ 
       if status not in statuscodes:
         statuscodes[status] = 0
       statuscodes[status] += 1
@@ -180,30 +168,23 @@ def samExample(def_name,larargs):
       if status != 0:
         print (mytime()," there was an error, stop looping ")
         break
-    except Exception:
-      print (mytime()," problem someplace in real processing ", e)
-      raise
-      break
+   
 
 # clean up
 
-    for files in inputlist:
-      print (mytime(),"try to remove", files)
-      if files.find("/local")> -1:
-        print (mytime(),"removing input file after output) produced",files)
-        os.remove(files)
-        print (mytime(),"removed ",files, "remaining space is ", get_fs_freespace(files))
+ 
 
   #if we got this far then we trust the project so mark it as completed
     try:
       if consumerok:
-        print (mytime(), " set consumer ", consumer_id, "complete")
-        ifdh_handle.setStatus(project_uri, consumer_id, "completed")
+        print (mytime(), " set consumer ", consumer_id, "done")
+        samweb.setProcessStatus('finished',process_url )
+        #ifdh_handle.setStatus(project_uri, consumer_id, "completed")
       else:
         print (mytime(), " set consumer ", consumer_id, "bad")
-        ifdh_handle.setStatus(project_uri, consumer_id, "bad")
+        samweb.setProcessStatus('bad',process_url )
+        #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
     except Exception:
       print (mytime()," can't even set to bad as consumer status failed",e)
-      raise
 
 test()
