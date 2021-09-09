@@ -35,11 +35,14 @@ def samExample(def_name,larargs):
   
   info = startProject(def_name)
   
-  try:
-    project_uri = ifdh_handle.findProject(  project_name, "" )
-  except Exception:
-    print (mytime(),"findProject exception ", e)
-    sys.exit(1)
+  project_name = info["project"]
+  project_uri = info["'projectURL"]
+  
+#  try:
+#    project_uri = ifdh_handle.findProject(  project_name, "" )
+#  except Exception:
+#    print (mytime(),"findProject exception ", e)
+#    sys.exit(1)
 
   print ("Got SAM project uri:",project_uri)
   nfileid = 0
