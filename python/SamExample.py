@@ -5,7 +5,7 @@ import os,sys,time,string,datetime
 import samweb_client
 import ifdh
 
-e = BaseException
+e = "unknown"
 
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
@@ -37,7 +37,7 @@ def samExample(def_name,larargs):
   
   try:
     project_uri = ifdh_handle.findProject(  project_name, "" )
-  except Exception(e):
+  except Exception:
     print (mytime(),"findProject exception ", e)
     sys.exit(1)
 
@@ -62,7 +62,7 @@ def samExample(def_name,larargs):
     try:
       consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
       print (mytime(),"Got SAM consumer id:",consumer_id)
-    except Exception(e):
+    except Exception:
       print (mytime()," could not get a consumer ",e)
       break
     print (mytime(),"consumer ids", consumerid)
@@ -73,7 +73,7 @@ def samExample(def_name,larargs):
       try:
         input_uri = ifdh_handle.getNextFile( project_uri, consumer_id )
         print (mytime(),"  Got input_uri from ifdh: ", input_uri)
-      except Exception(e):
+      except Exception:
         print (mytime()," getNextFile failed ",e)
         consumerok = False
         stillfiles = False
@@ -96,13 +96,13 @@ def samExample(def_name,larargs):
           break
         print (mytime(),"  Fetched input:",inputfile," space left is ",get_fs_freespace(inputfile))
 
-      except Exception(e):
+      except Exception:
 
       #todo can we just continue?
         print (mytime(),"fetchInput ifdh error:", e, " quitting big time")
         try:
           ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'skipped' )
-        except Exception(e):
+        except Exception:
           print (mytime()," can't even set it to skipped as file status failed",e)
         stillfiles = False
         consumerok = False
@@ -112,14 +112,14 @@ def samExample(def_name,larargs):
       if os.path.exists(inputfile):
           try:
             status = process(inputfile,larargs)
-          except Exception(e):
+          except Exception:
             print ("processing returned",status)
             ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'failed' )
             raise
             break
           try:
             ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'consumed' )
-          except Exception(e):
+          except Exception:
             print (mytime()," can't even set it to skipped as file status failed",e)
             raise
             break
@@ -128,13 +128,13 @@ def samExample(def_name,larargs):
           print (mytime(),"SAM lied - this file was not delivered, process what we have but then bail")
           try:
             ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote( input_uri), 'skipped' )
-          except Exception(e):
+          except Exception:
             print (mytime()," can't even set it to skipped as file status failed",e)
           stillfiles = False
           consumerok = False
           try:
             ifdh_handle.setStatus(project_uri, consumer_id, "bad")
-          except Exception(e):
+          except Exception:
             print (mytime()," can't even set to bad as consumer status failed",e)
           raise
           break
@@ -146,7 +146,7 @@ def samExample(def_name,larargs):
       try:
         print (mytime()," consumer not ok ", consumer_id, " try to set bad")
         ifdh_handle.setStatus(project_uri, consumer_id, "bad")
-      except Exception(e):
+      except Exception:
         print (mytime()," can't even set to bad as consumer status failed",e)
       raise
       break
@@ -176,7 +176,7 @@ def samExample(def_name,larargs):
       if status != 0:
         print (mytime()," there was an error, stop looping ")
         break
-    except Exception(e):
+    except Exception:
       print (mytime()," problem someplace in real processing ", e)
       raise
       break
@@ -198,7 +198,7 @@ def samExample(def_name,larargs):
       else:
         print (mytime(), " set consumer ", consumer_id, "bad")
         ifdh_handle.setStatus(project_uri, consumer_id, "bad")
-    except Exception(e):
+    except Exception:
       print (mytime()," can't even set to bad as consumer status failed",e)
       raise
 
