@@ -12,7 +12,7 @@ opts["sam_perfile"]=4
 opts["appFamily"] = "test"
 opts["appName"]= "test"
 opts["appVersion"] = os.getenv("DUNETPC_VERSION")
-opts["prpcess_description"]="testing sam access"
+opts["process_description"]="testing sam access"
 samweb = samweb_client.SAMWebClient(experiment='dune')
 
 def mytime():
