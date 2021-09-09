@@ -61,6 +61,11 @@ def samExample(def_name,larargs):
 
   #get files from SAM until it has no more
 
+  consumer_id = samweb.startProcess(project_uri, opts["appFamily"], opts["appName"], opts["appVersion"], node=socket.gethostname(), description=opts["process_description"], maxFiles=opts["MaxFiles"], schemas="root")
+    #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
+  process_url = samweb.makeProcessUrl(project_uri, consumer_id)
+  print (mytime(),"Got SAM consumer id:",consumer_id, process_url)
+  
   while stillfiles:
 
     print ("stillfiles loop")
@@ -104,60 +109,40 @@ def samExample(def_name,larargs):
 
       try:
         inputfile = ifdh_handle.fetchInput(input_uri)
-
+        print(" got file ",inputfile)
         if inputfile == "":
           print (mytime(),"   No input file delivered, ifdh should have raised an exception " ,input_uri)
           stillfiles= False
           consumerok = False
-          ifdh_handle.setStatus(project_uri, consumer_id, "bad")
+          samweb.setProcessStatus('failed',process_url )
+          #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
           break
         print (mytime(),"  Fetched input:",inputfile," space left is ",get_fs_freespace(inputfile))
 
       except Exception:
 
       #todo can we just continue?
-        print (mytime(),"fetchInput ifdh error:", e, " quitting big time")
-        try:
-          ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'skipped' )
-        except Exception:
-          print (mytime()," can't even set it to skipped as file status failed",e)
+        
         stillfiles = False
         consumerok = False
-        ifdh_handle.setStatus(project_uri, consumer_id, "bad")
+        samweb.setProcessStatus('failed',process_url )
+        #ifdh_handle.setStatus(project_uri, consumer_id, "bad")
         raise
         break
         
-      if os.path.exists(inputfile): # doesn't work with xrootd.
-          try:
-            status = process(inputfile,larargs)
-          except Exception:
-            print ("processing returned",status)
-            ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'failed' )
-            raise
-            break
-          # need to process bad status
-          try:
-            ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'consumed' )
-          except Exception:
-            print (mytime()," can't even set it to skipped as file status failed",e)
-            raise
-            break
+    
+        try:
+          status = process(inputfile,larargs)
           nfiles = nfiles + 1
-      else:
-          print (mytime(),"SAM lied - this file was not delivered, process what we have but then bail")
-          try:
-            ifdh_handle.updateFileStatus(project_uri, consumer_id, urllib.quote( input_uri), 'skipped' )
-          except Exception:
-            print (mytime()," can't even set it to skipped as file status failed",e)
-          stillfiles = False
-          consumerok = False
-          try:
-            ifdh_handle.setStatus(project_uri, consumer_id, "bad")
-          except Exception:
-            print (mytime()," can't even set to bad as consumer status failed",e)
+        except Exception:
+          print ("processing returned",status)
+          samweb.setFileStatus(project_uri, consumer_id, urllib.quote(input_uri), 'failed' )
           raise
           break
-
+        # need to process bad status
+        
+          nfiles = nfiles + 1
+      
 
     print (mytime(),"end of loop to get files from consumer: INPUTLIST ",inputlist)
 
