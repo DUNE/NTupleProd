@@ -1,7 +1,7 @@
 # needs to kno-
 # project_name
 # opts["sam_perfile"] # of files
-import os,sys,time,string,datetime
+import os,sys,time,string,datetime,socket
 import samweb_client
 import ifdh
 
