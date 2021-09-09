@@ -1,15 +1,17 @@
-# needs to know
+# needs to kno-
 # project_name
 # opts["sam_perfile"] # of files
 import os,sys,time,string,datetime
 import samweb_client
 import ifdh
 
+e = BaseException
+
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
 
 def mytime():
-  return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+  return datetime.datetime.now().strftime("%Y-%m-%d-%H%M.%S")
 
 def test():
   larargs = "-c test.fcl -n2"
@@ -21,7 +23,7 @@ def process(file,larargs):
   print ("for now a dummy processing",larcommand)
   
 def startProject(def_name):
-  project_name = def_name+mytime()
+  project_name = def_name+"_"+mytime()
   val = samweb.startProject(project_name,def_name)
   print ("startProject",val)
   return val
@@ -184,17 +186,17 @@ def samExample(def_name,larargs):
     for files in inputlist:
       print (mytime(),"try to remove", files)
       if files.find("/local")> -1:
-        (print mytime(),"removing input file after output) produced",files
+        print (mytime(),"removing input file after output) produced",files)
         os.remove(files)
         print (mytime(),"removed ",files, "remaining space is ", get_fs_freespace(files))
 
   #if we got this far then we trust the project so mark it as completed
     try:
       if consumerok:
-        (print mytime(), " set consumer ", consumer_id, "complete"
-        ifdh_handle.setStatus(project_uri, consumer_id, "completed"))
+        print (mytime(), " set consumer ", consumer_id, "complete")
+        ifdh_handle.setStatus(project_uri, consumer_id, "completed")
       else:
-        (print mytime(), " set consumer ", consumer_id, "bad")
+        print (mytime(), " set consumer ", consumer_id, "bad")
         ifdh_handle.setStatus(project_uri, consumer_id, "bad")
     except Exception(e):
       print (mytime()," can't even set to bad as consumer status failed",e)
