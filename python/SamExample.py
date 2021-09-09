@@ -65,7 +65,7 @@ def samExample(def_name,larargs):
     inputlist = []
 
     try:
-      consumer_id = samweb.startProcess(projecturl=project_uri, appFamily=opts["appFamily"], appName=opts["appName"], appVersion=opts["appVersion"], deliveryLocation, node=socket.gethostname(), description=process_description, maxFiles=maxFiles, schemas="root")
+      consumer_id = samweb.startProcess(projecturl=project_uri, appFamily=opts["appFamily"], appName=opts["appName"], appVersion=opts["appVersion"], node=socket.gethostname(), description=process_description, maxFiles=maxFiles, schemas="root")
       #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
       print (mytime(),"Got SAM consumer id:",consumer_id)
     except Exception:
