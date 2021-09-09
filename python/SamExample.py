@@ -7,6 +7,8 @@ import ifdh
 
 e = "unknown"
 
+opts = []
+opts["sam_perfile"]=4
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
 
