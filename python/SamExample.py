@@ -36,7 +36,7 @@ def samExample(def_name,larargs):
   info = startProject(def_name)
   
   project_name = info["project"]
-  project_uri = info["'projectURL"]
+  project_uri = info["projectURL"]
   
 #  try:
 #    project_uri = ifdh_handle.findProject(  project_name, "" )
