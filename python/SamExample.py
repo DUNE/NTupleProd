@@ -12,7 +12,7 @@ opts["sam_perfile"]=4
 opts["appFamily"] = "test"
 opts["appName"]= "test"
 opts["appVersion"] = os.getenv("DUNETPC_VERSION")
-
+opts["prpcessdescriptio"]="testing sam access"
 samweb = samweb_client.SAMWebClient(experiment='dune')
 
 def mytime():
@@ -69,7 +69,7 @@ def samExample(def_name,larargs):
 
     #try:
     #cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, node=node, description=process_description, maxFiles=maxFiles, schemas=schemas)
-    consumer_id = samweb.startProcess(projecturl=project_uri, appFamily=opts["appFamily"], appName=opts["appName"], appVersion=opts["appVersion"], node=socket.gethostname(), description=process_description, maxFiles=maxFiles, schemas="root")
+    consumer_id = samweb.startProcess(projecturl=project_uri, appFamily=opts["appFamily"], appName=opts["appName"], appVersion=opts["appVersion"], node=socket.gethostname(), description=opts["process_description"], maxFiles=maxFiles, schemas="root")
       #consumer_id = ifdh_handle.establishProcess(project_uri,"ana",os.getenv("DUNE_RELEASE"), socket.gethostname(),os.getenv("GRID_USER"),"root-tuple")
     print (mytime(),"Got SAM consumer id:",consumer_id)
     #except Exception:
