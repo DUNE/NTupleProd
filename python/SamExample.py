@@ -4,6 +4,7 @@
 import os,sys,time,string,datetime,socket
 import samweb_client
 import ifdh
+import subprocess
 
 e = "unknown"
 statuscodes ={}
@@ -20,13 +21,16 @@ def mytime():
   return datetime.datetime.now().strftime("%Y-%m-%d-%H%M.%S")
 
 def test():
-  larargs = "-c test.fcl  "
+  larargs = "-c./test.fcl"
   project_name = "PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1"
   samExample(project_name,larargs)
   
 def process(filelist,larargs):
-  larcommand = "lar %s -s %s "%(larargs, filelist)
-  print ("for now a dummy processing",larcommand)
+  larcommand = ["lar",larargs]
+  larcommand += filelist.split(" ")
+  print ("try to launch",larcommand)
+  ret = subprocess.run(larcommand)
+  print ("subprocess returns:", ret)
   return 0
   
 def startProject(def_name):
@@ -139,7 +143,7 @@ def samExample(def_name,larargs):
 #        break
         
       nfiles = nfiles + 1
-      inputfiles += " "+input_url
+      inputfiles += input_url + " "
     
       # end of loop to gather list of files
        
