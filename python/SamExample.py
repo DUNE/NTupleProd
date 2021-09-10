@@ -9,12 +9,12 @@ import subprocess
 e = "unknown"
 statuscodes ={}
 opts = {}
-opts["sam_perfile"]=4
+opts["sam_perfile"]=2
 opts["appFamily"] = "test"
 opts["appName"]= "test"
 opts["appVersion"] = os.getenv("DUNETPC_VERSION")
 opts["process_description"]="testing sam access"
-opts["MaxFiles"]=10
+opts["MaxFiles"]=6
 samweb = samweb_client.SAMWebClient(experiment='dune')
 
 def mytime():
@@ -26,10 +26,16 @@ def test():
   samExample(project_name,larargs)
   
 def process(filelist,larargs):
+  if len(filelist)< 1:
+    return -1
   larcommand = ["lar",larargs]
-  larcommand += filelist.split(" ")
-  print ("try to launch",larcommand)
-  ret = subprocess.run(larcommand)
+  files = filelist.split(" ")
+  filename = os.path.basename(files[0]).replace(".root","")+"_tuple"
+  larcommand += files
+  logname = open(filename+".out",'w')
+  errname = open(filename+".err",'w')
+  print ("try to launch",larcommand,filename)
+  ret = subprocess.run(larcommand,stdout=logname,stderr=errname)
   print ("subprocess returns:", ret)
   return 0
   
@@ -148,8 +154,11 @@ def samExample(def_name,larargs):
       # end of loop to gather list of files
        
     print (" have a bunch of input files ", inputfiles)
-    status = process(inputfiles,larargs)
-    
+    if len(inputfiles) > 0:
+      status = process(inputfiles,larargs)
+    else:
+      print ("ran out of files")
+      stillfiles = False
     # mark all files as bad if processing failed.
 #    if status != 0:
 #      for file in input_urls:
