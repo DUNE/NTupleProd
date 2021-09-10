@@ -1,0 +1,242 @@
+#include "PDSPAnalyzer.fcl"
+#include "services_dune.fcl"
+#include "ProtoDUNETruthBeamFilter.fcl"
+#include "protoDUNE_reco_mc_prolog.fcl"
+
+
+process_name: PDSPAna
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "pduneana.root" }
+  TimeTracker:       {}
+  MemoryTracker:     {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:                      @local::dune_message_services_prod_debug
+  FileCatalogMetadata:          @local::art_file_catalog_mc
+                                @table::protodune_services
+  PdspChannelMapService:        @local::pdspchannelmap
+  ChannelStatusService:         @local::pdsp_channel_status
+  BackTrackerService: {
+    BackTracker: {
+      SimChannelModuleLabel: "tpcrawdecoder:simpleSC"
+      G4ModuleLabel: "largeant"
+      MinimumHitEnergyFraction: 1e-1
+    }
+  }
+  FileCatalogMetadataDUNE: { }
+  TFileMetadataDUNE: @local::dune_tfile_metadata
+}
+services.message.destinations.LogStandardOut.threshold: "INFO"
+services.SpaceCharge.EnableSimEfieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+services.SpaceCharge.EnableSimulationSCE: true
+#services.Geometry: @local::protodunev6_geo
+#services.TFileMetadataDUNE.JSONFileName: "%ifb_pdsp_ntuple_test.root.json"
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+  fileNames: ["input_file.root"]
+}
+
+physics:
+{
+
+ producers: { 
+   @table::protoDUNE_reco_mc_stage1_producers
+ }
+
+ filters: { 
+   fTruth: @local::beam_filter
+ }
+
+ fpath: [fTruth]
+
+ analyzers:
+ {
+  pduneana:          @local::pdspanalysis
+ }
+ 
+ ana:  [ pduneana ]
+
+ #stream1: [ out1 ]
+ 
+ end_paths:     [ ana ]
+
+}
+
+outputs: {}
+physics.filters.fTruth.PDG: [211, -13, 2212]
+physics.analyzers.pduneana.SelectEvents: ["fpath"]
+physics.analyzers.pduneana.CalorimetryTagSCE: "pandoracalinoxyzt"
+physics.analyzers.pduneana.CalorimetryTagNoSCE: "pandoracalonosce" ##For no-SCE sample
+physics.analyzers.pduneana.Pandora2CaloSCE: "pandora2calinoxyzt"
+#physics.analyzers.pduneana.HitTag: "hitpdune"
+physics.analyzers.pduneana.Verbose: false 
+physics.analyzers.pduneana.DoReweight: true 
+#physics.analyzers.pduneana.ParameterSet: [
+#  {
+#    Cut: "inel"
+#    Name: "fQE1"
+#    Range: [0., 500.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  },
+#  {
+#    Cut: "inel"
+#    Name: "fQE2"
+#    Range: [500., 2000.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  },
+#
+#  {
+#    Cut: "abs"
+#    Name: "fAbs1"
+#    Range: [0., 500.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  },
+#  {
+#    Cut: "abs"
+#    Name: "fAbs2"
+#    Range: [500., 2000.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  },
+#
+#  {
+#    Cut: "cex"
+#    Name: "fCex1"
+#    Range: [0., 400.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  },
+#  {
+#    Cut: "cex"
+#    Name: "fCex2"
+#    Range: [400., 800.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  },
+#  {
+#    Cut: "cex"
+#    Name: "fCex3"
+#    Range: [800., 2000.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  }
+#]
+physics.analyzers.pduneana.ParameterSet: [
+  {
+    Cut: "inel"
+    Name: "fQE1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "inel"
+    Name: "fQE2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  {
+    Cut: "abs"
+    Name: "fAbs1"
+    Range: [0., 500.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "abs"
+    Name: "fAbs2"
+    Range: [500., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  {
+    Cut: "cex"
+    Name: "fCex1"
+    Range: [0., 400.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex2"
+    Range: [400., 800.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "cex"
+    Name: "fCex3"
+    Range: [800., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+
+  #{
+  #  Cut: "cex"
+  #  Name: "fCex4"
+  #  Range: [0., 600.]
+  #  Nominal: 1.0 
+  #  Sigma: .2
+  #},
+  #{
+  #  Cut: "cex"
+  #  Name: "fCex5"
+  #  Range: [600., 2000.]
+  #  Nominal: 1.0 
+  #  Sigma: .2
+  #},
+  #{
+  #  Cut: "abs"
+  #  Name: "fAbs3"
+  #  Range: [0., 600.]
+  #  Nominal: 1.0 
+  #  Sigma: .2
+  #},
+  #{
+  #  Cut: "abs"
+  #  Name: "fAbs4"
+  #  Range: [600., 2000.]
+  #  Nominal: 1.0 
+  #  Sigma: .2
+  #},
+  {
+    Cut: "reac"
+    Name: "fReac1"
+    Range: [0., 600.]
+    Nominal: 1.0 
+    Sigma: .2
+  },
+  {
+    Cut: "reac"
+    Name: "fReac2"
+    Range: [600., 2000.]
+    Nominal: 1.0 
+    Sigma: .2
+  } #,
+#  {
+#    Cut: "reac"
+#    Name: "fReacFull"
+#    Range: [0., 2000.]
+#    Nominal: 1.0 
+#    Sigma: .2
+#  }
+]
+
+#physics.reco: [ emtrkmichelid ]
+physics.analyzers.pduneana.DoProtReweight: false 
+physics.analyzers.pduneana.GetTrackMichel: false 
+physics.analyzers.pduneana.CalibrationParsSCE: @local::CalorimetryParameters_SPProd4_MC_SCE #_eLT
+physics.analyzers.pduneana.CalibrationParsNoSCE: @local::CalorimetryParameters_SPProd4_MC_SCE #_eLT
+services.ParticleInventoryService.ParticleInventory.EveIdCalculator: "EmEveIdCalculator"
