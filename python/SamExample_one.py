@@ -24,6 +24,8 @@ opts["MaxFiles"]=3
 opts["jsonName"]="ana_hist.root.json"
 opts["rootName"]="pduneana.root"
 opts["runType"]="protodune-sp"
+opts["dataTier"]="storage-testing"
+opts["dataStream"]="physics"
 
 # need this
 samweb = samweb_client.SAMWebClient(experiment='dune')
@@ -69,8 +71,9 @@ def process_sam(project_url,project_name,consumer_id,larargs):
       #patch the application as the art option doesn't do anything and doesn't do name
       md["file_name"]=rootname
       md["application"]={"family": opts["appFamily"],"name": opts["appName"],"version": opts["appVersion"]}
-      md["data_tier"]="storage-testing"
+      md["data_tier"]=opts["dataTier"]
       md["file_size"]=os.path.getsize(rootname)
+      md["data_stream"]=opts["dataStream"]
       # patch the runs with the runtype as the art option doesn't work
       runs = md["runs"]
       newruns = []
