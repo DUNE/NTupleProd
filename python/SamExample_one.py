@@ -8,6 +8,8 @@ import subprocess
 import argparse
 
 parser = argparse.ArgumentParser(description='Test Sam Project')
+parser.add_argument("-c", type=str, help="Name of fcl file", default="test.fcl")
+args = parser.parse_args()
 
  
 # test setup to be fixed up later with real args
@@ -35,7 +37,8 @@ def mytime():
 
 def test():
   
-  larargs = ["-c./test.fcl"]+["-n100"]
+  #larargs = ["-c./test.fcl"]+["-n100"]
+  larargs = ["-c" + args.c]+["-n100"]
   project_name = "PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1"
   samExample(project_name,larargs)
   
