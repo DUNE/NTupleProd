@@ -6,6 +6,7 @@ import os,sys,time,datetime
 import samweb_client
 from samweb_client import utility
 import json
+import argparse
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
 DEBUG=True
@@ -31,14 +32,14 @@ class mergeMeta():
     
     self.opts = opts #this is a dictionary containing the option=>value pairs given at the command line
     self.samweb = samweb_client.SAMWebClient(experiment='minerva')
-    self.externals = ["file_name","file_format","start_time","end_time","file_size"]
-    self.consistent = ["file_type","file_format","data_tier","group","data_stream" ]
-    self.ignore = ["checksum","create_date","Offline.options","first_event",
-"parents",
-"Offline.machine",
-"last_event","RawDigits.optionspath","Online.triggertype"]
-
-
+    self.externals = ["file_name", "file_format", "start_time", "end_time", "file_size"]
+    self.consistent = ["file_type", "file_format", "data_tier", "group", "data_stream" ]
+    self.ignore = ["checksum", "create_date", "Offline.options", "first_event", 
+                   "parents", 
+                   "Offline.machine", 
+                   "last_event", "RawDigits.optionspath", "Online.triggertype"]
+    self.input_filenames = []
+    self.is_sorted = False
 
 ############################################
 ## Function that forms merged metadata
@@ -46,7 +47,7 @@ class mergeMeta():
 ############################################
 
 
-  def checkmerge(self,list):
+  def checkmerge(self, file_list):
     
   
     checks = {}
@@ -54,15 +55,15 @@ class mergeMeta():
       checks[tag] = []
     fail = True
   
-    for file in list:
-      filename = os.path.basename(file)
-      if not os.path.exists(file):
-        print (" can't find file",file,"quitting")
+    for f in file_list:
+      filename = os.path.basename(f)
+      if not os.path.exists(f):
+        print (" can't find file", f, "quitting")
         break
       if DEBUG:
         print (" looking at: ", filename)
    
-      metafile = open(file,'r')
+      metafile = open(f, 'r')
       thismeta = json.load(metafile)
       print (thismeta)
       if DEBUG:
@@ -123,23 +124,23 @@ class mergeMeta():
       if not os.path.exists(file):
           print (" can't find file",file,"quitting")
           break
-      if DEBUG:
+      if self.opts["DEBUG"]:
         print (" looking at: ", filename)
         
       metafile = open(file,'r')
       thismeta = json.load(metafile)
       print (thismeta)
-      if DEBUG:
+      if self.opts["DEBUG"]:
         dumpList(thismeta)
             
       for tag in thismeta:
-          if DEBUG:
+          if self.opts["DEBUG"]:
               print (" check tag ", tag)
           if tag not in self.consistent and tag not in self.externals and tag not in mix:
-              if DEBUG:
+              if self.opts["DEBUG"]:
                   print (" found a new parameter to worry about", tag)
               mix[tag]=[thismeta[tag]]
-      if DEBUG:
+      if self.opts["DEBUG"]:
           dumpList(thismeta)
                 
       # here to find the must not mix ones
@@ -151,7 +152,7 @@ class mergeMeta():
           if tag in thismeta:
               if thismeta[tag] not in mix[tag]:
                   mix[tag].append(thismeta[tag])
-                  if DEBUG:
+                  if self.opts["DEBUG"]:
                       print ("tag",tag," has", len(mix[tag]), "mixes")
       # get info from the parent files
 
@@ -165,7 +166,7 @@ class mergeMeta():
           print ("something in event count, firstevent, lastevent is missing")
       # is this already in the runlist
       runlist =runlist + thismeta["runs"]
-      if DEBUG:
+      if self.opts["DEBUG"]:
           print (thismeta["runs"], runlist)
       parentage += thismeta["parents"]
       
@@ -184,8 +185,7 @@ class mergeMeta():
 
             
 
-# inherit from parents if all are consistent
-
+    # inherit from parents if all are consistent
     for tag in mix:
         if tag in self.ignore:
             continue
@@ -235,7 +235,7 @@ class mergeMeta():
         newJsonData["parents"]=parentage
         
  
-    if(DEBUG):
+    if(self.opts["DEBUG"]):
 
         print ("-------------------\n")
         dumpList(newJsonData)
@@ -246,43 +246,62 @@ class mergeMeta():
     return newJsonData
 
 
+  ## Update internal list of files
+  ## Flip sort flag to tell the class later
+  def add_files(self, files):
+    self.input_filenames += files
+    self.is_sorted = False
+  
+  ## Sort the files
+  def sort_files(self):
+    self.input_filenames.sort()
+    self.is_sorted = True
 
+  def write_metadata(self, merged_file, meta):
+    with open(merged_file + '.json', 'w') as f:
+      json.dump(meta, f, indent=2, separators=(',', ': '))
+    
 
 if __name__ == "__main__":
   
-  opts = {}
+  parser = argparse.ArgumentParser(description='Test merge meta')
+  parser.add_argument('--files', help="List of files", nargs='+', default = [])
+  parser.add_argument('-m', help='Name of merged file', type = str,
+                      default = 'new.root')
+  parser.add_argument('--debug', help = 'Turn on/off debug', type = int, default = 0)
+  args = parser.parse_args()
+
+  opts = {
+    "DEBUG": bool(args.debug)
+  }
   
-  filename = "new.root"
-  
+  filename = args.m
   
   maker = mergeMeta(opts)
+  #maker.add_files(args.files)
+  #maker.sort_files()
+
   
-  inputfiles=[
-    "protoduneana_PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_2021-09-11-1857.18_16723900_fixed.json",
-    "protoduneana_PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_2021-09-11-1857.18_16723932_fixed.json"]
-
-
+  inputfiles = args.files
   inputfiles.sort()
     
-  externals = {"file_name":filename,
-              "file_format":"root",
-              "start_time":timeform(datetime.datetime.now()),
-              "end_time":timeform(datetime.datetime.now()),
-              "file_size":os.path.getsize(filename),
-              "event_count":-1
+  externals = {"file_name": filename,
+              "file_format": "root",
+              "start_time": timeform(datetime.datetime.now()),
+              "end_time": timeform(datetime.datetime.now()),
+              "file_size": os.path.getsize(filename),
+              "event_count": -1
   }
               
-  if DEBUG:
+  if args.debug:
     print (externals)
   test = maker.checkmerge(inputfiles)
   if test:
-    meta = maker.concatenate(inputfiles,externals)
+    meta = maker.concatenate(inputfiles, externals)
     print(meta)
-  f = open(filename+".json",'w')
-  json.dump(meta,f, indent=2,separators=(',',': '))
+
+  #Write file
+  #f = open(filename+".json",'w')
+  #json.dump(meta,f, indent=2,separators=(',',': '))
+  maker.write_metadata(filename, meta)
   
-  
-
-
-
-
