@@ -18,7 +18,7 @@ e = "unknown"
 statuscodes ={}
 opts = {}
 opts["fcl"]="test.fcl"
-opts["n_consumers"]=2
+opts["n_consumers"]=1
 opts["appFamily"] = "protoduneana"
 opts["appName"]= "pdspana"
 opts["appVersion"]=os.getenv("PROTODUNEANA_VERSION")
@@ -40,8 +40,50 @@ def test():
   
   #larargs = ["-c./test.fcl"]+["-n100"]
   larargs = ["-c" + args.c]+["-n20"]
-  project_name = "PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1"
+  project_name = "schellma-1GeVMC-test"
   samExample(project_name,larargs)
+  
+
+# merge the meta based on the parents in the json file produced by Art.
+
+def mergeTheMeta(rootname,jsonname,status,options):
+  mopts = {}
+  maker = mergeMeta(mopts)
+  maker.source = "samweb"
+  if status == 0 and os.path.exists(options["jsonName"]):
+    print ("found ",options["jsonName"])
+    os.rename(options["jsonName"],jsonname)
+    os.rename(options["rootName"],rootname)
+    json_file = open(jsonname,'r')
+    if not json_file:
+        raise IOError('Unable to open json file %s.' % jsonname)
+    else:
+      md = json.load(json_file)
+      json_file.close()
+      externals = {}
+      #set things we need to make certain don't inherit from parents
+      externals["file_name"]=rootname
+      externals["application"]={"family": options["appFamily"],"name": options["appName"],"version": options["appVersion"]}
+      externals["data_tier"]=options["dataTier"]
+      externals["file_size"]=os.path.getsize(rootname)
+      externals["data_stream"]=options["dataStream"]
+      externals["start_time"]=md["start_time"]
+      externals["end_time"]=md["end_time"]
+      externals["art.returnstatus"] = status
+      
+      # identify the parents so you can merge
+      parents = md["parents"]
+      plist = []
+      for p in parents:
+        plist += [(p["file_name"])]
+      status = maker.checkmerge(plist)
+      if status:
+        newmd = maker.concatenate(plist,externals)
+        print (newmd)
+        return newmd
+      else:
+        print (" could not merge the inputs, sorry")
+        return None
   
 def process_sam(project_url,project_name,consumer_id,larargs):
   
@@ -57,60 +99,68 @@ def process_sam(project_url,project_name,consumer_id,larargs):
   logfile = open(filename+".out",'w')
   errfile = open(filename+".err",'w')
   jsonname =filename+"_temp.json"
+  fixed = open(jsonname.replace("_temp",""),'w')
   print ("SamExample:",mytime(),"try to launch",larcommand,consumer_id)
-  start_time = timeform(datetime.datetime.now())
+  #start_time = timeform(datetime.datetime.now())
   ret = subprocess.run(larcommand,stdout=logfile,stderr=errfile)
-  end_time = timeform(datetime.datetime.now())
+  #end_time = timeform(datetime.datetime.now())
   status = ret.returncode
   print ("lar returned:",status)
   # now make better metadata
-  mopts = {}
-  maker = mergeMeta(mopts)
-  maker.source = "samweb"
-  if status == 0 and os.path.exists(opts["jsonName"]):
-    print ("found ",opts["jsonName"])
-    os.rename(opts["jsonName"],jsonname)
-    os.rename(opts["rootName"],rootname)
-    json_file = open(jsonname,'r')
-    fixed = open(jsonname.replace("_temp","_fixed"),'w')
-    if not json_file:
-        raise IOError('Unable to open json file %s.' % jsonname)
+#  mopts = {}
+#  maker = mergeMeta(mopts)
+#  maker.source = "samweb"
+   
+  if os.path.exists(opts["jsonName"]):
+    themd = mergeTheMeta(rootname,jsonname,status,opts)
+#    print ("found ",opts["jsonName"])
+#    os.rename(opts["jsonName"],jsonname)
+#    os.rename(opts["rootName"],rootname)
+#    json_file = open(jsonname,'r')
+#    fixed = open(jsonname.replace("_temp","_fixed"),'w')
+#    if not json_file:
+#        raise IOError('Unable to open json file %s.' % jsonname)
+#    else:
+#      md = json.load(json_file)
+#      json_file.close()
+#      externals = {}
+#      #set things we need to make certain don't inherit from parents
+#      externals["file_name"]=rootname
+#      externals["application"]={"family": opts["appFamily"],"name": opts["appName"],"version": opts["appVersion"]}
+#      externals["data_tier"]=opts["dataTier"]
+#      externals["file_size"]=os.path.getsize(rootname)
+#      externals["data_stream"]=opts["dataStream"]
+#      externals["start_time"]=start_time
+#      externals["end_time"]=end_time
+#      # identify the parents so you can merge
+#      parents = md["parents"]
+#      plist = []
+#      for p in parents:
+#        plist += [(p["file_name"])]
+#      status = maker.checkmerge(plist)
+#      if status:
+#        newmd = maker.concatenate(plist,externals)
+#      # patch the runs with the runtype as the art option doesn't work
+##      runs = md["runs"]
+##      newruns = []
+##      for run in runs:
+##        run[2] = opts["runType"]
+##        newruns.append(run)
+##      print ("run fix",newruns)
+##      md["runs"]=newruns
+#      else:
+#        print (" could not merge the inputs, sorry")
+#        return 1
+
+    if themd != None:
+      json.dump(themd,fixed, indent=2,separators=(',',': '))
+      return 0
     else:
-      md = json.load(json_file)
-      json_file.close()
-      externals = {}
-      #set things we need to make certain don't inherit from parents
-      externals["file_name"]=rootname
-      externals["application"]={"family": opts["appFamily"],"name": opts["appName"],"version": opts["appVersion"]}
-      externals["data_tier"]=opts["dataTier"]
-      externals["file_size"]=os.path.getsize(rootname)
-      externals["data_stream"]=opts["dataStream"]
-      externals["start_time"]=start_time
-      externals["end_time"]=end_time
-      # identify the parents so you can merge
-      parents = md["parents"]
-      plist = []
-      for p in parents:
-        plist += [(p["file_name"])]
-      status = maker.checkmerge(plist)
-      if status:
-        newmd = maker.concatenate(plist,externals)
-      # patch the runs with the runtype as the art option doesn't work
-#      runs = md["runs"]
-#      newruns = []
-#      for run in runs:
-#        run[2] = opts["runType"]
-#        newruns.append(run)
-#      print ("run fix",newruns)
-#      md["runs"]=newruns
-      else:
-        print (" could not merge the inputs, sorry")
-        return 1
-      json.dump(newmd,fixed, indent=2,separators=(',',': '))
+      return 1
       
   else:
     print ("no json or failure",status)
-    return 1
+    return status
   print ("subprocess returns:", status)
   return 0
   
