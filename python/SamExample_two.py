@@ -10,6 +10,7 @@ from mergeMeta import *
 
 parser = argparse.ArgumentParser(description='Test Sam Project')
 parser.add_argument("-c", type=str, help="Name of fcl file", default="test.fcl")
+parser.add_argument("-n", type=int, help="n events", default=20)
 args = parser.parse_args()
 
  
@@ -39,7 +40,7 @@ def mytime():
 def test():
   
   #larargs = ["-c./test.fcl"]+["-n100"]
-  larargs = ["-c" + args.c]+["-n20"]
+  larargs = ["-c" + args.c]+["-n%i"%args.n]
   project_name = "schellma-1GeVMC-test"
   samExample(project_name,larargs)
   
@@ -102,7 +103,18 @@ def process_sam(project_url,project_name,consumer_id,larargs):
   fixed = open(jsonname.replace("_temp",""),'w')
   print ("SamExample:",mytime(),"try to launch",larcommand,consumer_id)
   #start_time = timeform(datetime.datetime.now())
-  ret = subprocess.run(larcommand,stdout=logfile,stderr=errfile)
+  #ret = subprocess.run(larcommand,stdout=logfile,stderr=errfile)
+
+
+  #Here: replace the larcommand with basically the same thing but with the wrapper
+  wrap_cmd = ["python", "lar_wrapper.py"] + larargs
+  wrap_cmd += ["--sam-web-uri=%s"%project_url]
+  wrap_cmd += ["--sam-process-id=%s"%consumer_id]
+  wrap_cmd += ["--sam-application-family=%s"%opts["appFamily"]]
+  wrap_cmd += ["--sam-application-version=%s"%opts["appVersion"]]
+  ret = subprocess.run(wrap_cmd, stdout=logfile, stderr=errfile)
+
+
   #end_time = timeform(datetime.datetime.now())
   status = ret.returncode
   print ("lar returned:",status)
