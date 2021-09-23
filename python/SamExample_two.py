@@ -101,85 +101,45 @@ def process_sam(project_url,project_name,consumer_id,larargs):
   logfile = open(filename+".out",'w')
   errfile = open(filename+".err",'w')
   jsonname =filename+"_temp.json"
-  fixed = open(jsonname.replace("_temp",""),'w')
   print ("SamExample:",mytime(),"try to launch",larcommand,consumer_id)
   #start_time = timeform(datetime.datetime.now())
 
 
-  #Here: replace the larcommand with basically the same thing but with the wrapper
-  wrap_cmd = ["python", "lar_wrapper.py"] + larargs
-  wrap_cmd += ["--sam-web-uri=%s"%project_url]
-  wrap_cmd += ["--sam-process-id=%s"%consumer_id]
-  wrap_cmd += ["--sam-application-family=%s"%opts["appFamily"]]
-  wrap_cmd += ["--sam-application-version=%s"%opts["appVersion"]]
   if (args.w == 0):
+    fixed = open(jsonname.replace("_temp",""),'w')
     print('Not using wrapper')
     ret = subprocess.run(larcommand,stdout=logfile,stderr=errfile)
+    status = ret.returncode
+    print ("lar returned:",status)
+    # now make better metadata
+    if os.path.exists(opts["jsonName"]):
+      themd = mergeTheMeta(rootname,jsonname,status,opts)
+
+      if themd != None:
+        json.dump(themd,fixed, indent=2,separators=(',',': '))
+        return 0
+      else:
+        return 1
+        
+    else:
+      print ("no json or failure",status)
+      return status
+    print ("subprocess returns:", status)
+    return 0
+
   else:
     print('Using wrapper')
+    wrap_cmd = ["python", "lar_wrapper.py"] + larargs
+    wrap_cmd += ["--sam-web-uri=%s" % project_url,
+                 "--sam-process-id=%s" % consumer_id,
+                 "--sam-application-family=%s" % opts["appFamily"],
+                 "--sam-application-version=%s" % opts["appVersion"],
+                 "-j", jsonname,
+                 "--rootname", rootname]
     ret = subprocess.run(wrap_cmd, stdout=logfile, stderr=errfile)
-
+    return ret.returncode
 
   #end_time = timeform(datetime.datetime.now())
-  status = ret.returncode
-  print ("lar returned:",status)
-  # now make better metadata
-#  mopts = {}
-#  maker = mergeMeta(mopts)
-#  maker.source = "samweb"
-   
-  if os.path.exists(opts["jsonName"]):
-    themd = mergeTheMeta(rootname,jsonname,status,opts)
-#    print ("found ",opts["jsonName"])
-#    os.rename(opts["jsonName"],jsonname)
-#    os.rename(opts["rootName"],rootname)
-#    json_file = open(jsonname,'r')
-#    fixed = open(jsonname.replace("_temp","_fixed"),'w')
-#    if not json_file:
-#        raise IOError('Unable to open json file %s.' % jsonname)
-#    else:
-#      md = json.load(json_file)
-#      json_file.close()
-#      externals = {}
-#      #set things we need to make certain don't inherit from parents
-#      externals["file_name"]=rootname
-#      externals["application"]={"family": opts["appFamily"],"name": opts["appName"],"version": opts["appVersion"]}
-#      externals["data_tier"]=opts["dataTier"]
-#      externals["file_size"]=os.path.getsize(rootname)
-#      externals["data_stream"]=opts["dataStream"]
-#      externals["start_time"]=start_time
-#      externals["end_time"]=end_time
-#      # identify the parents so you can merge
-#      parents = md["parents"]
-#      plist = []
-#      for p in parents:
-#        plist += [(p["file_name"])]
-#      status = maker.checkmerge(plist)
-#      if status:
-#        newmd = maker.concatenate(plist,externals)
-#      # patch the runs with the runtype as the art option doesn't work
-##      runs = md["runs"]
-##      newruns = []
-##      for run in runs:
-##        run[2] = opts["runType"]
-##        newruns.append(run)
-##      print ("run fix",newruns)
-##      md["runs"]=newruns
-#      else:
-#        print (" could not merge the inputs, sorry")
-#        return 1
-
-    if themd != None:
-      json.dump(themd,fixed, indent=2,separators=(',',': '))
-      return 0
-    else:
-      return 1
-      
-  else:
-    print ("no json or failure",status)
-    return status
-  print ("subprocess returns:", status)
-  return 0
   
 def startProject(def_name):
   project_name = def_name+"_"+mytime()

@@ -295,6 +295,7 @@ if __name__ == "__main__":
     meta = maker.concatenate(inputfiles,externals)
   print ("done")
   print(meta)
+
   f = open(filename+".json",'w')
   json.dump(meta,f, indent=2,separators=(',',': '))
   
