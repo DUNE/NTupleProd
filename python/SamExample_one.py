@@ -6,6 +6,7 @@ import json
 import ifdh
 import subprocess
 import argparse
+from mergeMeta import *
 
 parser = argparse.ArgumentParser(description='Test Sam Project')
 parser.add_argument("-c", type=str, help="Name of fcl file", default="test.fcl")
@@ -35,12 +36,52 @@ samweb = samweb_client.SAMWebClient(experiment='dune')
 def mytime():
   return datetime.datetime.now().strftime("%Y-%m-%d-%H%M.%S")
 
+
 def test():
   
   #larargs = ["-c./test.fcl"]+["-n100"]
   larargs = ["-c" + args.c]+["-n100"]
   project_name = "PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1"
   samExample(project_name,larargs)
+
+def mergeTheMeta(rootname,jsonname,status,options):
+  mopts = {}
+  maker = mergeMeta(mopts)
+  maker.source = "samweb"
+  if status == 0 and os.path.exists(options["jsonName"]):
+    print ("found ",options["jsonName"])
+    os.rename(options["jsonName"],jsonname)
+    os.rename(options["rootName"],rootname)
+    json_file = open(jsonname,'r')
+    if not json_file:
+        raise IOError('Unable to open json file %s.' % jsonname)
+    else:
+      md = json.load(json_file)
+      json_file.close()
+      externals = {}
+      #set things we need to make certain don't inherit from parents
+      externals["file_name"]=rootname
+      externals["application"]={"family": options["appFamily"],"name": options["appName"],"version": options["appVersion"]}
+      externals["data_tier"]=options["dataTier"]
+      externals["file_size"]=os.path.getsize(rootname)
+      externals["data_stream"]=options["dataStream"]
+      externals["start_time"]=md["start_time"]
+      externals["end_time"]=md["end_time"]
+      externals["art.returnstatus"] = status
+      
+      # identify the parents so you can merge
+      parents = md["parents"]
+      plist = []
+      for p in parents:
+        plist += [(p["file_name"])]
+      status = maker.checkmerge(plist)
+      if status:
+        newmd = maker.concatenate(plist,externals)
+        print (newmd)
+        return newmd
+      else:
+        print (" could not merge the inputs, sorry")
+        return None
   
 def process_sam(project_url,project_name,consumer_id,larargs):
   
@@ -56,38 +97,22 @@ def process_sam(project_url,project_name,consumer_id,larargs):
   logfile = open(filename+".out",'w')
   errfile = open(filename+".err",'w')
   jsonname =filename+"_temp.json"
+  fixed = open(jsonname.replace("_temp",""),'w')
   print ("SamExample:",mytime(),"try to launch",larcommand,consumer_id)
   ret = subprocess.run(larcommand,stdout=logfile,stderr=errfile)
   status = ret.returncode
   print ("lar returned:",status)
-  # now make better metadata
-  if status == 0 and os.path.exists(opts["jsonName"]):
-    print ("found ",opts["jsonName"])
-    os.rename(opts["jsonName"],jsonname)
-    os.rename(opts["rootName"],rootname)
-    json_file = open(jsonname,'r')
-    fixed = open(jsonname.replace("_temp","_fixed"),'w')
-    if not json_file:
-        raise IOError('Unable to open json file %s.' % jsonname)
+  # probably need to check this logic and possibly assign special status codes.
+  if os.path.exists(opts["jsonName"]):
+    themd = mergeTheMeta(rootname,jsonname,status,opts)
+    if themd != None:
+      json.dump(themd,fixed, indent=2,separators=(',',': '))
+      return 0
     else:
-      md = json.load(json_file)
-      #patch the application as the art option doesn't do anything and doesn't do name
-      md["file_name"]=rootname
-      md["application"]={"family": opts["appFamily"],"name": opts["appName"],"version": opts["appVersion"]}
-      md["data_tier"]=opts["dataTier"]
-      md["file_size"]=os.path.getsize(rootname)
-      md["data_stream"]=opts["dataStream"]
-      # patch the runs with the runtype as the art option doesn't work
-      runs = md["runs"]
-      newruns = []
-      for run in runs:
-        run[2] = opts["runType"]
-        newruns.append(run)
-      print ("run fix",newruns)
-      md["runs"]=newruns
-      json.dump(md,fixed, indent=2,separators=(',',': '))
+      return 1
   else:
     print ("no json or failure",status)
+    return status
   print ("subprocess returns:", status)
   return 0
   
@@ -146,5 +171,6 @@ def samExample(def_name,larargs):
   samweb.stopProject(project_url)
   out = samweb.projectSummaryText(project_url)
   print (out)
+
 
 test()
