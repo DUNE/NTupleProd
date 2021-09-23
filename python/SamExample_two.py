@@ -25,7 +25,7 @@ opts["appFamily"] = "protoduneana"
 opts["appName"]= "pdspana"
 opts["appVersion"]=os.getenv("PROTODUNEANA_VERSION")
 opts["process_description"]="testing sam access"
-opts["MaxFiles"]=2
+opts["MaxFiles"]=3
 opts["jsonName"]="ana_hist.root.json"
 opts["rootName"]="pduneana.root"
 opts["runType"]="protodune-sp"
@@ -133,7 +133,7 @@ def process_sam(project_url,project_name,consumer_id,larargs):
     wrap_cmd += ["--sam-web-uri=%s" % project_url,
                  "--sam-process-id=%s" % consumer_id,
                  "--sam-application-family=%s" % opts["appFamily"],
-                 "--sam-application-version=%s" % opts["appVersion"],
+                 #"--sam-application-version=%s" % opts["appVersion"],
                  "-j", jsonname,
                  "--rootname", rootname]
     ret = subprocess.run(wrap_cmd, stdout=logfile, stderr=errfile)

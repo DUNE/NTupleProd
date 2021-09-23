@@ -1,7 +1,9 @@
+#!/bin/env python3
+
+import os
 import subprocess
 import argparse
 from mergeMeta import *
-import os
 
 def mergeTheMeta(rootname, jsonname, status, options):
   mopts = {}
@@ -58,8 +60,8 @@ parser.add_argument('--sam-process-id', type=str, help='Consumer ID',
                     required=True)
 parser.add_argument('--sam-application-family', type=str, help='App Family',
                     required=True)
-parser.add_argument('--sam-application-version', type=str, help='App Version',
-                    required=True)
+#parser.add_argument('--sam-application-version', type=str, help='App Version',
+#                    required=True)
 parser.add_argument('-c', type=str, help='FCL file', required=True)
 parser.add_argument('-n', type=int, help='N events', default=10)
 parser.add_argument('-j', type=str, help='JSON filename produced by module',
@@ -72,10 +74,13 @@ fixed = open(json_name.replace("_temp", ""), 'w')
 
 ##Build larsoft command
 lar_cmd = ["lar", "-c%s" % args.c, "-n%i" % args.n,
+           "-T", "pduneana.root",
            "--sam-web-uri=%s" % args.sam_web_uri,
            "--sam-process-id=%s" % args.sam_process_id,
            "--sam-application-family=%s" % args.sam_application_family,
-           "--sam-application-version=%s" % args.sam_application_version]
+           "--sam-application-version=%s" % os.getenv("PROTODUNEANA_VERSION")]
+
+           #"--sam-application-version=%s" % args.sam_application_version]
 
 ##Call larsoft command
 proc = subprocess.run(lar_cmd)
