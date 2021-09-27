@@ -8,6 +8,7 @@ import os,sys,time,datetime
 import samweb_client
 from samweb_client import utility
 import json
+import argparse
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
 DEBUG=True
@@ -34,7 +35,8 @@ class mergeMeta():
     self.opts = opts #this is a dictionary containing the option=>value pairs given at the command line
     self.samweb = samweb_client.SAMWebClient(experiment='dune')
     self.externals = ["file_name","start_time","end_time","file_size"]
-    self.consistent = ["file_type","file_format","data_tier","group","data_stream" ]
+    #self.consistent = ["file_type","file_format","data_tier","group","data_stream" ]
+    self.consistent = ["file_type","file_format","data_tier","group"]
     self.ignore = ["checksum","create_date","Offline.options","first_event","parents","Offline.machine","last_event"]
     self.source = "samweb" # alternative = local
   
@@ -253,37 +255,87 @@ class mergeMeta():
     except Exception:
         print (" metadata validation failed - write it out anyways")
     return newJsonData
+   
+  def setSourceLocal(self):
+    self.source = "local"
+  def setSourceSamweb(self, json_file):
+    self.source = "samweb"
 
 
 
+  def fillInFromParents(self, json_filename, new_json_filename):
+    meta_file = open(json_filename, 'r')
+    this_meta = json.load(meta_file)
+    parents = [i['file_name'] for i in this_meta['parents']]
+    parent_metas = [samweb.getMetadata(f) for f in parents]
+
+    skip = ['file_id', 'create_date', 'user', 'file_size', 'checksum',
+            'content_status', 'file_type', 'file_format', 'group', 'data_tier',
+            'application', 'event_count', 'first_event', 'last_event',
+            'start_time', 'end_time', 'data_stream', 'art.file_format_era',
+            'art.file_format_version', 'art.first_event', 'art.last_event',
+            'art.process_name', 'DUNE.campaign', 'DUNE.requestid', 'runs',
+            'parents', 'file_name']
+
+    all_fields = {}
+    for pm in parent_metas:
+      for t in pm:
+        if t in skip: continue 
+        if t not in all_fields: all_fields[t] = []
+        all_fields[t] += [pm[t]]
+    new_meta = {}
+    for t, l in all_fields.items():
+      print(t, l)
+
+      if len(set(l)) > 1: print("ERROR")
+      else: new_meta[t] = l[0]
+
+    filled_meta = this_meta
+    for t, m in new_meta.items():
+      if t in filled_meta:
+        print("ERROR")
+        break
+      filled_meta[t] = m 
+    with open(new_json_filename , 'w') as f:
+      json.dump(filled_meta, f, indent=2, separators=(',', ': '))
 
 if __name__ == "__main__":
   
+  parser = argparse.ArgumentParser(description='Merge Meta')
+  parser.add_argument("-f", type=str, help="Name of merged root file", default="new.root")
+  parser.add_argument('-j', help='List of json files', nargs='+', default=[])
+  parser.add_argument('-s', help='Do Sort?', default=1, type=int)
+  args = parser.parse_args()
+
   opts = {}
   
-  filename = "new.root"
+  filename = args.f
   
   
   maker = mergeMeta(opts)
   maker.source = "local"  # remote if you want it to get data from remote files in sam
-  inputfiles=[
-    "protoduneana_PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_2021-09-11-1857.18_16723900_fixed.json",
-    "protoduneana_PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_2021-09-11-1857.18_16723932_fixed.json"]
-  inputfiles = ["protoduneana_PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_2021-09-16-1909.24_16809595_fixed.json",
-"protoduneana_PDSPProd4a_MC_1GeV_reco1_sce_datadriven_v1_2021-09-16-1909.24_16809632_fixed.json"]
+  inputfiles = args.j
 
-  #inputfiles=["file1.json","file2.json"]
   print (inputfiles)
 
-  inputfiles.sort()
+  if (args.s != 0):
+    inputfiles.sort()
     
-  externals = {"file_name":filename,
-              "file_format":"root",
-              "start_time":timeform(datetime.datetime.now()),
-              "end_time":timeform(datetime.datetime.now()),
-              "file_size":os.path.getsize(filename),
-              "event_count":-1
-  }
+  app_info = {
+    "family": "protoduneana",
+    "name": "pdspana",
+    "version": os.getenv("PROTODUNEANA_VERSION")
+  } 
+  externals = {"file_name": filename,
+               "application": app_info,
+               "data_tier": "storage-testing",
+               "file_size": os.path.getsize(filename),
+               "data_stream": "physics",
+               "file_format": "root",
+               "start_time": timeform(datetime.datetime.now()),
+               "end_time": timeform(datetime.datetime.now()),
+               "event_count": -1,
+              }
               
   if DEBUG:
     print (externals)
@@ -299,8 +351,3 @@ if __name__ == "__main__":
   f = open(filename+".json",'w')
   json.dump(meta,f, indent=2,separators=(',',': '))
   
-  
-
-
-
-

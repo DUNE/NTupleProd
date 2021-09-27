@@ -11,7 +11,8 @@ from mergeMeta import *
 parser = argparse.ArgumentParser(description='Test Sam Project')
 parser.add_argument("-c", type=str, help="Name of fcl file", default="test.fcl")
 parser.add_argument("-n", type=int, help="n events", default=20)
-parser.add_argument('-w', type=int, help = 'Use wrapper?', default=0)
+parser.add_argument('-w', type=int, help='Use wrapper?', default=0)
+parser.add_argument('-f', type=int, help='N files?', default=3)
 args = parser.parse_args()
 
  
@@ -25,7 +26,7 @@ opts["appFamily"] = "protoduneana"
 opts["appName"]= "pdspana"
 opts["appVersion"]=os.getenv("PROTODUNEANA_VERSION")
 opts["process_description"]="testing sam access"
-opts["MaxFiles"]=3
+opts["MaxFiles"]=args.f
 opts["jsonName"]="ana_hist.root.json"
 opts["rootName"]="pduneana.root"
 opts["runType"]="protodune-sp"

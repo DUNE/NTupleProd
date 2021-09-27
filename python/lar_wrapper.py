@@ -5,10 +5,20 @@ import subprocess
 import argparse
 from mergeMeta import *
 
+def fillMeta(rootname, jsonname, status, options):
+  mopts = {}
+  maker = mergeMeta(mopts)
+  if status == 0 and os.path.exists(options["jsonName"]):
+    print("found ", options["jsonName"])
+    os.rename(options["jsonName"], jsonname)
+    os.rename(options["rootName"], rootname)
+    maker.fillInFromParents(jsonname, jsonname.replace(".json", "filled.json"))
+
 def mergeTheMeta(rootname, jsonname, status, options):
   mopts = {}
   maker = mergeMeta(mopts)
-  maker.source = "samweb"
+  maker.setSourceLocal()
+
   if status == 0 and os.path.exists(options["jsonName"]):
     print("found ", options["jsonName"])
     os.rename(options["jsonName"], jsonname)
@@ -38,18 +48,19 @@ def mergeTheMeta(rootname, jsonname, status, options):
       }
       
       # identify the parents so you can merge
-      parents = md["parents"]
-      plist = [(p["file_name"]) for p in parents]
+      #parents = md["parents"]
+      ##plist = [(p["file_name"]) for p in parents]
+      #plist = [jsonname]
 
-      status = maker.checkmerge(plist)
+      #status = maker.checkmerge(plist)
 
-      if status:
-        newmd = maker.concatenate(plist, externals)
-        print (newmd)
-        return newmd
-      else:
-        print (" could not merge the inputs, sorry")
-        return None
+      #if status:
+      #  newmd = maker.concatenate(plist, externals)
+      #  print (newmd)
+      #  return newmd
+      #else:
+      #  print (" could not merge the inputs, sorry")
+      #  return None
 
 ##Set up arguments
 ##A lot of these are the same from what fife_wrap passes to lar
@@ -105,18 +116,20 @@ opts = {
   "dataTier": "storage-testing",
   "dataStream": "physics"
 }
-if os.path.exists(opts["jsonName"]):
-  themd = mergeTheMeta(args.rootname, json_name, status, opts)
-  if themd:
-    json.dump(themd, fixed, indent=2, separators=(',', ': '))
-    print("wrote json. exiting lar_wrapper")
-    exit() #Will send out 0 by default
-  else:
-    print("could not merge meta")
-    exit(1)
-      
-else:
-  print("no json or failure")
-  exit(1)
+
+fillMeta(args.rootname, json_name, status, opts)
+#if os.path.exists(opts["jsonName"]):
+#  themd = mergeTheMeta(args.rootname, json_name, status, opts)
+#  if themd:
+#    json.dump(themd, fixed, indent=2, separators=(',', ': '))
+#    print("wrote json. exiting lar_wrapper")
+#    exit() #Will send out 0 by default
+#  else:
+#    print("could not merge meta")
+#    exit(1)
+#      
+#else:
+#  print("no json or failure")
+#  exit(1)
 
 exit()
