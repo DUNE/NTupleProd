@@ -258,7 +258,7 @@ class mergeMeta():
    
   def setSourceLocal(self):
     self.source = "local"
-  def setSourceSamweb(self, json_file):
+  def setSourceSamweb(self):
     self.source = "samweb"
 
 
@@ -305,6 +305,7 @@ if __name__ == "__main__":
   parser.add_argument("-f", type=str, help="Name of merged root file", default="new.root")
   parser.add_argument('-j', help='List of json files', nargs='+', default=[])
   parser.add_argument('-s', help='Do Sort?', default=1, type=int)
+  parser.add_argument('-t', help='local or samweb', type=str, default='samweb')
   args = parser.parse_args()
 
   opts = {}
@@ -313,9 +314,15 @@ if __name__ == "__main__":
   
   
   maker = mergeMeta(opts)
-  maker.source = "local"  # remote if you want it to get data from remote files in sam
-  inputfiles = args.j
+  if args.t == 'local':
+    maker.setSourceLocal()
+  elif args.t == 'samweb':
+    maker.setSourceSamweb()
+  else:
+    print('error: mergeMeta -t provided is not local or samweb', args.t)
+    exit(1)
 
+  inputfiles = args.j
   print (inputfiles)
 
   if (args.s != 0):

@@ -4,6 +4,8 @@ import os
 import subprocess
 import argparse
 from mergeMeta import *
+import samweb_client
+import json
 
 def fillMeta(rootname, jsonname, status, options):
   mopts = {}
@@ -12,7 +14,13 @@ def fillMeta(rootname, jsonname, status, options):
     print("found ", options["jsonName"])
     os.rename(options["jsonName"], jsonname)
     os.rename(options["rootName"], rootname)
-    maker.fillInFromParents(jsonname, jsonname.replace(".json", "filled.json"))
+    maker.fillInFromParents(jsonname, jsonname.replace(".json", "_filled.json"))
+    with open(jsonname.replace(".json", "_filled.json"), 'r') as f:
+      the_md = json.load(f)
+    the_md['file_name'] = rootname
+    the_md['file_size'] = os.path.getsize(rootname)
+    with open(jsonname.replace(".json", "_filled.json"), 'w') as f:
+      json.dump(the_md, f, indent=2, separators=(',', ': '))
 
 def mergeTheMeta(rootname, jsonname, status, options):
   mopts = {}
@@ -118,6 +126,11 @@ opts = {
 }
 
 fillMeta(args.rootname, json_name, status, opts)
+
+samweb = samweb_client.SAMWebClient(experiment='dune')
+with open(json_name.replace(".json", "_filled.json"), 'r') as md_file:
+  samweb.declareFile(mdfile=md_file)
+
 #if os.path.exists(opts["jsonName"]):
 #  themd = mergeTheMeta(args.rootname, json_name, status, opts)
 #  if themd:
