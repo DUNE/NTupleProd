@@ -11,14 +11,13 @@ import json
 import argparse
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
-DEBUG=True
 
 
 #-------utilities ------#
 
-def dumpList(list):
-    for item in list:
-      print (item, list[item])
+def dumpList(the_list):
+    for item in the_list:
+      print (item, the_list[item])
 
 
 def timeform(now):
@@ -39,242 +38,234 @@ class mergeMeta():
     self.consistent = ["file_type","file_format","data_tier","group"]
     self.ignore = ["checksum","create_date","Offline.options","first_event","parents","Offline.machine","last_event"]
     self.source = "samweb" # alternative = local
-  
-    
-
-
+    self.debug = False
 
 ############################################
 ## Function that forms merged metadata
 ## for a list of files
 ############################################
-
-
-  def checkmerge(self,list):
-    
-  
+  def checkmerge(self, the_list):
     checks = {}
     for tag in self.consistent:
       checks[tag] = []
     fail = True
   
-    for file in list:
-      filename = os.path.basename(file)
+    ##Look through the file list and get the metadata for each
+    for f in the_list:
+      filename = os.path.basename(f)
       if self.source == "local":
-        if not os.path.exists(file):
-          print (" can't find file",file,"quitting")
+        if not os.path.exists(f):
+          print(" can't find file", f, "quitting")
           break
-        if DEBUG:
-          print (" looking at: ", filename)
+        if self.debug:
+          print(" looking at: ", filename)
      
-        metafile = open(file,'r')
-        thismeta = json.load(metafile)
+        with open(f, 'r') as metafile:
+          thismeta = json.load(metafile)
       else:
         thismeta = samweb.getMetadata(filename)
-      print (thismeta)
-      if DEBUG:
+      print(thismeta)
+      if self.debug:
         dumpList(thismeta)
       
       # here to find the must not mix ones
+      # Loop over the tags we've defined as consistent
+      # and check that it's in the file metadata
       for tag in self.consistent:
         if tag not in thismeta:
             checks[tag].append("missing")  # if it ain't there, it aint there.
+        ## Then, add the value from this metadata field to the check list 
         if thismeta[tag] not in checks[tag]:
           checks[tag].append(thismeta[tag])
       
     fail = False
-      
-  
     if fail:
       return False
       
+    #Checks that all files have the same value for this field
     for tag in self.consistent:
-            if(len(checks[tag]) != 1):
-              print ("tag ", tag, " has problem ",checks[tag])
-              return False
+      if (len(checks[tag]) != 1):
+        print ("tag ", tag, " has problem ",checks[tag])
+        return False
     
     return True
 
   
-  def concatenate(self,list,externals):
-
+  def concatenate(self, the_list, externals):
     # here are things that are unique to the output and must be supplied externally
-    
     for tag in self.externals:
-        if not tag in externals:
-            print ("must supply ",tag," before we can merge")
-            sys.exit(2)
+      if not tag in externals:
+        print ("must supply", tag, "before we can merge")
+        sys.exit(2)
     newmeta = externals       
     firstevent = 999999999999
     lastevent = -999
     runlist = []
-    eventcount=0
+    eventcount = 0
     parentage = []
-    if(len(list) < 1):
-        return []
+    if(len(the_list) < 1):
+      return []
    
     starttime = ""
-    endtime=""
+    endtime = ""
 
     # here are things that are internals and must be consistent
-    
     checks = {}
     mix = {}
     other = {}
     for tag in self.consistent:
-        checks[tag] = []
-    
+      checks[tag] = []
  
-    for file in list:
-      filename = os.path.basename(file)
+    # loop over files in the list
+    for f in the_list:
+      filename = os.path.basename(f)
+      #get the metadata for each file
       if self.source == "local":
-        if not os.path.exists(file):
-            print (" can't find file",file,"quitting")
-            break
-        if DEBUG:
-          print (" looking at: ", filename)
+        if not os.path.exists(f):
+          print(" can't find file", f, "quitting")
+          break
+        if self.debug:
+          print(" looking at:", filename)
           
-        metafile = open(file,'r')
-        thismeta = json.load(metafile)
+        with open(f, 'r') as metafile:
+          thismeta = json.load(metafile)
       else:
         thismeta = samweb.getMetadata(filename)
       print (thismeta)
-      if DEBUG:
+      if self.debug:
         dumpList(thismeta)
             
+      #Loop over tags in the metadata
       for tag in thismeta:
-          if DEBUG:
-              print (" check tag ", tag)
-          if tag not in self.consistent and tag not in self.externals and tag not in mix:
-              if DEBUG:
-                  print (" found a new parameter to worry about", tag)
-              mix[tag]=[thismeta[tag]]
-      if DEBUG:
-          dumpList(thismeta)
-      print ("meta is ",thismeta)
-      print ("mix is ",mix)
-      # here to find the must not mix ones
-      for tag in self.consistent:
-          if thismeta[tag] not in checks[tag]:
-              checks[tag].append(thismeta[tag])
-      # here to find others
-      for tag in mix:
-          if tag in thismeta:
-              if thismeta[tag] not in mix[tag]:
-                  mix[tag].append(thismeta[tag])
-                  if DEBUG:
-                      print ("tag",tag," has", len(mix[tag]), "mixes")
-      # get info from the parent files
+        if self.debug:
+          print (" check tag ", tag)
+          ##Check if it's a new field
+          if (tag not in self.consistent and
+              tag not in self.externals and tag not in mix):
+            if self.debug:
+              print (" found a new parameter to worry about", tag)
+            mix[tag]=[thismeta[tag]]
+      if self.debug:
+        dumpList(thismeta)
+      print ("meta is", thismeta)
+      print ("mix is", mix)
 
+      #Loop over the tags that must be consistent
+      #and add the fields to the checklist
+      for tag in self.consistent:
+        if thismeta[tag] not in checks[tag]:
+          checks[tag].append(thismeta[tag])
+
+      #See how many mixed fields are here
+      for tag in mix:
+        if tag in thismeta:
+          if thismeta[tag] not in mix[tag]:
+            mix[tag].append(thismeta[tag])
+            if self.debug:
+              print ("tag",tag," has", len(mix[tag]), "mixes")
+
+      #Get the first and last events and the count
       try:
-          if thismeta["first_event"] <= firstevent:
-              firstevent = thismeta["first_event"]
-          if thismeta["last_event"] >= lastevent:
-              lastevent = thismeta["last_event"]
-          eventcount = eventcount + thismeta["event_count"]
+        if thismeta["first_event"] <= firstevent:
+          firstevent = thismeta["first_event"]
+        if thismeta["last_event"] >= lastevent:
+          lastevent = thismeta["last_event"]
+        eventcount = eventcount + thismeta["event_count"]
       except:
-          print ("something in event count, firstevent, lastevent is missing")
+        print ("something in event count, firstevent, lastevent is missing")
       # is this already in the runlist
-      runlist =runlist + thismeta["runs"]
-      if DEBUG:
-          print (thismeta["runs"], runlist)
+      runlist = runlist + thismeta["runs"]
+      if self.debug:
+        print (thismeta["runs"], runlist)
+      # Get the list of parents
       parentage += thismeta["parents"]
       
     
+    #Start building the new metadata 
     newJsonData={}
-    # full metadata is available
 
-    # first check that things are not getting mixed up, these are things that should carry through.
-
+    #For the must-be-consistent tags,
+    #first check that things are not getting mixed up,
+    #these are things that should carry through.
     for tag in self.consistent:
-        if(len(checks[tag]) != 1):
-            print ("tag ", tag, " has problem ",checks[tag])
-            sys.exit(1)
-        else:
-            newJsonData[tag] = checks[tag][0]
-
-            
-
-# inherit from parents if all are consistent
+      if(len(checks[tag]) != 1):
+        print ("tag ", tag, " has problem ",checks[tag])
+        sys.exit(1)
+      else:
+        newJsonData[tag] = checks[tag][0]
 
     for tag in mix:
-        if tag in self.ignore:
-            continue
-        if tag == "runs":
-            continue
-        if tag == "event_count":
-            continue
-        if len(mix[tag]) == 1:
-           newJsonData[tag]=mix[tag][0]
-        if len(mix[tag]) > 1:
-            print ("don't write out mixed tags ",tag)
-            #newJsonData[tag] = "mixed"
-    
-        
-
+      #ignore certain ones
+      if tag in self.ignore or tag == 'runs' or tag == 'event_count':
+        continue
+      if len(mix[tag]) == 1:
+        newJsonData[tag] = mix[tag][0]
+      elif len(mix[tag]) > 1:
+        print ("don't write out mixed tags", tag)
 
     # overwrite with the externals if they are there
-    
     for tag in externals:
-        newJsonData[tag] = externals[tag]
+      newJsonData[tag] = externals[tag]
   
     #if no event count was provided from externals, use the input files
     if("event_count" not in newJsonData or newJsonData["event_count"] == -1):
-          newJsonData["event_count"] = eventcount
+      newJsonData["event_count"] = eventcount
           
     # set these from the parents
     if(firstevent!=-1 and lastevent !=-1):
-        newJsonData["first_event"]=firstevent
-        newJsonData["last_event"]=lastevent
-        newJsonData["runs"]=runlist
-        newJsonData["parents"]=parentage
-        
+      newJsonData["first_event"] = firstevent
+      newJsonData["last_event"] = lastevent
+      newJsonData["runs"] = runlist
+      newJsonData["parents"] = parentage
 
     #events/lumblock info is missing
     else:
-        newJsonData["first_event"]=firstevent
-        newJsonData["last_event"]=lastevent
-        newJsonData["event_count"]=eventcount
-        newJsonData["runs"]=runlist
-        newJsonData["parents"]=parentage
+        newJsonData["first_event"] = firstevent
+        newJsonData["last_event"] = lastevent
+        newJsonData["event_count"] = eventcount
+        newJsonData["runs"] = runlist
+        newJsonData["parents"] = parentage
 
-    if newJsonData["data_stream"]=="mc":
-        newJsonData["first_event"]=firstevent
-        newJsonData["last_event"]=lastevent
-        newJsonData["event_count"]=eventcount
-        newJsonData["runs"]=runlist
-        newJsonData["parents"]=parentage
+    if newJsonData["data_stream"] == "mc":
+        newJsonData["first_event"] = firstevent
+        newJsonData["last_event"] = lastevent
+        newJsonData["event_count"] = eventcount
+        newJsonData["runs"] = runlist
+        newJsonData["parents"] = parentage
         
  
-    if(DEBUG):
-
-        print ("-------------------\n")
-        dumpList(newJsonData)
+    if(self.debug):
+      print ("-------------------\n")
+      dumpList(newJsonData)
     try:
-        self.samweb.validateFileMetadata(newJsonData)
+      self.samweb.validateFileMetadata(newJsonData)
     except Exception:
-        print (" metadata validation failed - write it out anyways")
+      print (" metadata validation failed - write it out anyways")
     return newJsonData
    
+  def setDebug(self, debug=True):
+    self.debug = debug 
   def setSourceLocal(self):
     self.source = "local"
   def setSourceSamweb(self):
     self.source = "samweb"
 
 
-
+  ##Method to grab some info parents
   def fillInFromParents(self, json_filename, new_json_filename):
     meta_file = open(json_filename, 'r')
     this_meta = json.load(meta_file)
     parents = [i['file_name'] for i in this_meta['parents']]
     parent_metas = [samweb.getMetadata(f) for f in parents]
 
+
+    ##skip these fields
     skip = ['file_id', 'create_date', 'user', 'file_size', 'checksum',
             'content_status', 'file_type', 'file_format', 'group', 'data_tier',
             'application', 'event_count', 'first_event', 'last_event',
-            'start_time', 'end_time', 'data_stream', 'art.file_format_era',
+            'start_time', 'end_time', 'art.file_format_era',
             'art.file_format_version', 'art.first_event', 'art.last_event',
-            'art.process_name', 'DUNE.campaign', 'DUNE.requestid', 'runs',
+            'art.process_name', 'DUNE.requestid', 'runs',
             'parents', 'file_name']
 
     all_fields = {}
@@ -344,6 +335,7 @@ if __name__ == "__main__":
                "event_count": -1,
               }
               
+  DEBUG = 0
   if DEBUG:
     print (externals)
   print ("before check")

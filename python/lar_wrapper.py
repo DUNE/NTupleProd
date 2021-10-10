@@ -7,6 +7,9 @@ from mergeMeta import *
 import samweb_client
 import json
 
+
+
+###Method to fill in some necessary info from the art-level parents
 def fillMeta(rootname, jsonname, status, options):
   mopts = {}
   maker = mergeMeta(mopts)
@@ -22,6 +25,7 @@ def fillMeta(rootname, jsonname, status, options):
     with open(jsonname.replace(".json", "_filled.json"), 'w') as f:
       json.dump(the_md, f, indent=2, separators=(',', ': '))
 
+###Old method -- should probably remove
 def mergeTheMeta(rootname, jsonname, status, options):
   mopts = {}
   maker = mergeMeta(mopts)
@@ -125,9 +129,12 @@ opts = {
   "dataStream": "physics"
 }
 
+##FIll in info from the parents
 fillMeta(args.rootname, json_name, status, opts)
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
+
+#Declare file sam so it can be hadded later
 with open(json_name.replace(".json", "_filled.json"), 'r') as md_file:
   samweb.declareFile(mdfile=md_file)
 
