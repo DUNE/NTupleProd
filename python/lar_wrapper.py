@@ -93,7 +93,7 @@ parser.add_argument('--rootname', type=str, help='', required=True)
 
 args = parser.parse_args()
 json_name = args.j
-fixed = open(json_name.replace("_temp", ""), 'w')
+#fixed = open(json_name.replace("_temp", ""), 'w')
 
 ##Build larsoft command
 lar_cmd = ["lar", "-c%s" % args.c, "-n%i" % args.n,

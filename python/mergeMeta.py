@@ -140,11 +140,11 @@ class mergeMeta():
         if self.debug:
           print (" check tag ", tag)
           ##Check if it's a new field
-          if (tag not in self.consistent and
-              tag not in self.externals and tag not in mix):
-            if self.debug:
-              print (" found a new parameter to worry about", tag)
-            mix[tag]=[thismeta[tag]]
+        if (tag not in self.consistent and
+            tag not in self.externals and tag not in mix):
+          if self.debug:
+            print (" found a new parameter to worry about", tag)
+          mix[tag]=[thismeta[tag]]
       if self.debug:
         dumpList(thismeta)
       print ("meta is", thismeta)
