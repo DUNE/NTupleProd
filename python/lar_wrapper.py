@@ -7,7 +7,37 @@ from mergeMeta import *
 import samweb_client
 import json
 
+from glob import glob as ls
 
+def searchFCLPath(fcl_file):
+  split_path = os.environ['FHICL_FILE_PATH'].replace(':', ' ')
+  cmd = 'whereis -S %s -f %s'%(split_path, fcl_file)
+  proc = subprocess.run(cmd.split(), capture_output=True)
+  #Need stderr check
+  return proc.stdout
+
+def searchFCLPath2(fcl_file):
+  split_path = os.environ['FHICL_FILE_PATH'].split(':')
+  print(split_path)
+
+  results = []
+  for p in set(split_path):
+    if len(ls("%s/%s"%(p, fcl_file))) > 0:
+      print('found', p)
+      results.append(p)
+  return results
+
+def getFCLPath(fcl_file):
+  if fcl_file[0] == '.':
+    print('this location')
+    return os.environ['PWD'] 
+  elif fcl_file[0] == '/':
+    print('full path')
+    return '/'.join(fcl_file.split[:-1])
+  else:
+    results = searchFCLPath2(fcl_file)
+    print(results)
+    return results
 
 ###Method to fill in some necessary info from the art-level parents
 def fillMeta(rootname, jsonname, status, options):
@@ -22,57 +52,13 @@ def fillMeta(rootname, jsonname, status, options):
       the_md = json.load(f)
     the_md['file_name'] = rootname
     the_md['file_size'] = os.path.getsize(rootname)
+
+    fcl_path = getFCLPath(options['fcl'])
+    print('fcl_path', fcl_path)
+    the_md['DUNE.fcl_path'] = fcl_path[0]
+    the_md['DUNE.fcl_name'] = options['fcl']
     with open(jsonname.replace(".json", "_filled.json"), 'w') as f:
       json.dump(the_md, f, indent=2, separators=(',', ': '))
-
-###Old method -- should probably remove
-def mergeTheMeta(rootname, jsonname, status, options):
-  mopts = {}
-  maker = mergeMeta(mopts)
-  maker.setSourceLocal()
-
-  if status == 0 and os.path.exists(options["jsonName"]):
-    print("found ", options["jsonName"])
-    os.rename(options["jsonName"], jsonname)
-    os.rename(options["rootName"], rootname)
-    json_file = open(jsonname,'r')
-    if not json_file:
-      raise IOError('Unable to open json file %s.' % jsonname)
-    else:
-      md = json.load(json_file)
-      json_file.close()
-      #set things we need to make certain don't inherit from parents
-      app_info = {
-        "family": options["appFamily"],
-        "name": options["appName"],
-        "version": options["appVersion"]
-      }
-
-      externals = {
-        "file_name": rootname,
-        "data_tier": options["dataTier"],
-        "file_size": os.path.getsize(rootname),
-        "data_stream": options["dataStream"],
-        "start_time": md["start_time"],
-        "end_time": md["end_time"],
-        "art.returnstatus": status,
-        "application": app_info
-      }
-      
-      # identify the parents so you can merge
-      #parents = md["parents"]
-      ##plist = [(p["file_name"]) for p in parents]
-      #plist = [jsonname]
-
-      #status = maker.checkmerge(plist)
-
-      #if status:
-      #  newmd = maker.concatenate(plist, externals)
-      #  print (newmd)
-      #  return newmd
-      #else:
-      #  print (" could not merge the inputs, sorry")
-      #  return None
 
 ##Set up arguments
 ##A lot of these are the same from what fife_wrap passes to lar
@@ -95,6 +81,7 @@ args = parser.parse_args()
 json_name = args.j
 #fixed = open(json_name.replace("_temp", ""), 'w')
 
+
 ##Build larsoft command
 lar_cmd = ["lar", "-c%s" % args.c, "-n%i" % args.n,
            "-T", "pduneana.root",
@@ -115,7 +102,7 @@ if status != 0:
 
 ##Now merge the metadata
 opts = {
-  "fcl": "test.fcl",
+  "fcl": args.c,
   "n_consumers": 1,
   "appFamily": "protoduneana",
   "appName":  "pdspana",
@@ -137,19 +124,5 @@ samweb = samweb_client.SAMWebClient(experiment='dune')
 #Declare file sam so it can be hadded later
 with open(json_name.replace(".json", "_filled.json"), 'r') as md_file:
   samweb.declareFile(mdfile=md_file)
-
-#if os.path.exists(opts["jsonName"]):
-#  themd = mergeTheMeta(args.rootname, json_name, status, opts)
-#  if themd:
-#    json.dump(themd, fixed, indent=2, separators=(',', ': '))
-#    print("wrote json. exiting lar_wrapper")
-#    exit() #Will send out 0 by default
-#  else:
-#    print("could not merge meta")
-#    exit(1)
-#      
-#else:
-#  print("no json or failure")
-#  exit(1)
 
 exit()

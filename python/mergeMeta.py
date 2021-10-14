@@ -266,7 +266,7 @@ class mergeMeta():
             'start_time', 'end_time', 'art.file_format_era',
             'art.file_format_version', 'art.first_event', 'art.last_event',
             'art.process_name', 'DUNE.requestid', 'runs',
-            'parents', 'file_name']
+            'parents', 'file_name', 'data_stream']
 
     all_fields = {}
     for pm in parent_metas:
@@ -287,6 +287,18 @@ class mergeMeta():
         print("ERROR")
         break
       filled_meta[t] = m 
+
+    ##Patch the run type and data_stream
+    print("Patching run type")
+    new_runs = []
+    for r in filled_meta['runs']:
+      print(r)
+      new_runs.append(r)
+      new_runs[-1][2] = 'protodune-sp' 
+    filled_meta['runs'] = new_runs
+
+    filled_meta['data_stream'] = 'physics'
+
     with open(new_json_filename , 'w') as f:
       json.dump(filled_meta, f, indent=2, separators=(',', ': '))
 
