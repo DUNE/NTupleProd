@@ -57,6 +57,7 @@ def fillMeta(rootname, jsonname, status, options):
     print('fcl_path', fcl_path)
     the_md['DUNE.fcl_path'] = fcl_path[0]
     the_md['DUNE.fcl_name'] = options['fcl']
+    the_md['DUNE.fcl_version_tag'] = the_md['application']['version']
     with open(jsonname.replace(".json", "_filled.json"), 'w') as f:
       json.dump(the_md, f, indent=2, separators=(',', ': '))
 
