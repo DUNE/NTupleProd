@@ -136,7 +136,8 @@ def process_sam(project_url,project_name,consumer_id,larargs):
                  "--sam-application-family=%s" % opts["appFamily"],
                  #"--sam-application-version=%s" % opts["appVersion"],
                  "-j", jsonname,
-                 "--rootname", rootname]
+                 "--rootname", rootname,
+                 "--fix_count", '1']
     ret = subprocess.run(wrap_cmd, stdout=logfile, stderr=errfile)
     return ret.returncode
 

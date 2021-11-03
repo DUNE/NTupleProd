@@ -6,6 +6,7 @@ import argparse
 from mergeMeta import *
 import samweb_client
 import json
+import ROOT as RT
 
 from glob import glob as ls
 
@@ -58,6 +59,13 @@ def fillMeta(rootname, jsonname, status, options):
     the_md['DUNE.fcl_path'] = fcl_path[0]
     the_md['DUNE.fcl_name'] = options['fcl']
     the_md['DUNE.fcl_version_tag'] = the_md['application']['version']
+
+    if options['fix_count']:
+      print('Fixing count')
+      fCount = RT.TFile(rootname, 'open')
+      the_md['event_count'] = fCount.Get('pduneana/beamana').GetEntries()
+      fCount.Close()
+
     with open(jsonname.replace(".json", "_filled.json"), 'w') as f:
       json.dump(the_md, f, indent=2, separators=(',', ': '))
 
@@ -77,6 +85,7 @@ parser.add_argument('-n', type=int, help='N events', default=10)
 parser.add_argument('-j', type=str, help='JSON filename produced by module',
                     default='ana_hist.root.json')
 parser.add_argument('--rootname', type=str, help='', required=True)
+parser.add_argument('--fix_count', type=int, help='', default = 0)
 
 args = parser.parse_args()
 json_name = args.j
@@ -114,7 +123,8 @@ opts = {
   "rootName": "pduneana.root",
   "runType": "protodune-sp",
   "dataTier": "storage-testing",
-  "dataStream": "physics"
+  "dataStream": "physics",
+  "fix_count": args.fix_count
 }
 
 ##FIll in info from the parents
