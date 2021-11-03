@@ -338,7 +338,7 @@ if __name__ == "__main__":
   } 
   externals = {"file_name": filename,
                "application": app_info,
-               "data_tier": "storage-testing",
+               "data_tier": "root-tuple",
                "file_size": os.path.getsize(filename),
                "data_stream": "physics",
                "file_format": "root",
