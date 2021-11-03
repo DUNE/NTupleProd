@@ -55,7 +55,7 @@ class mergeMeta():
       filename = os.path.basename(f)
       if self.source == "local":
         if not os.path.exists(f):
-          print(" can't find file", f, "quitting")
+          #print(" can't find file", f, "quitting")
           break
         if self.debug:
           print(" looking at: ", filename)
@@ -64,7 +64,7 @@ class mergeMeta():
           thismeta = json.load(metafile)
       else:
         thismeta = samweb.getMetadata(filename)
-      print(thismeta)
+      #print(thismeta)
       if self.debug:
         dumpList(thismeta)
       
@@ -85,7 +85,7 @@ class mergeMeta():
     #Checks that all files have the same value for this field
     for tag in self.consistent:
       if (len(checks[tag]) != 1):
-        print ("tag ", tag, " has problem ",checks[tag])
+        #print ("tag ", tag, " has problem ",checks[tag])
         return False
     
     return True
@@ -131,7 +131,7 @@ class mergeMeta():
           thismeta = json.load(metafile)
       else:
         thismeta = samweb.getMetadata(filename)
-      print (thismeta)
+      #print (thismeta)
       if self.debug:
         dumpList(thismeta)
             
@@ -147,8 +147,8 @@ class mergeMeta():
           mix[tag]=[thismeta[tag]]
       if self.debug:
         dumpList(thismeta)
-      print ("meta is", thismeta)
-      print ("mix is", mix)
+      #print ("meta is", thismeta)
+      #print ("mix is", mix)
 
       #Loop over the tags that must be consistent
       #and add the fields to the checklist
@@ -276,7 +276,7 @@ class mergeMeta():
         all_fields[t] += [pm[t]]
     new_meta = {}
     for t, l in all_fields.items():
-      print(t, l)
+      #print(t, l)
 
       if len(set(l)) > 1: print("ERROR")
       else: new_meta[t] = l[0]
@@ -292,7 +292,7 @@ class mergeMeta():
     print("Patching run type")
     new_runs = []
     for r in filled_meta['runs']:
-      print(r)
+      #print(r)
       new_runs.append(r)
       new_runs[-1][2] = 'protodune-sp' 
     filled_meta['runs'] = new_runs
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     exit(1)
 
   inputfiles = args.j
-  print (inputfiles)
+  #print (inputfiles)
 
   if (args.s != 0):
     inputfiles.sort()
@@ -350,14 +350,13 @@ if __name__ == "__main__":
   DEBUG = 0
   if DEBUG:
     print (externals)
-  print ("before check")
   test = maker.checkmerge(inputfiles)
   print ("merge status",test)
   if test:
     print ("concatenate")
     meta = maker.concatenate(inputfiles,externals)
   print ("done")
-  print(meta)
+  #print(meta)
 
   f = open(filename+".json",'w')
   json.dump(meta,f, indent=2,separators=(',',': '))
