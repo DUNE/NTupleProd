@@ -34,7 +34,7 @@ def getFCLPath(fcl_file):
     return os.environ['PWD'] 
   elif fcl_file[0] == '/':
     print('full path')
-    return '/'.join(fcl_file.split[:-1])
+    return '/'.join(fcl_file.split('/')[:-1])
   else:
     results = searchFCLPath2(fcl_file)
     print(results)
@@ -53,12 +53,15 @@ def fillMeta(rootname, jsonname, status, options):
       the_md = json.load(f)
     the_md['file_name'] = rootname
     the_md['file_size'] = os.path.getsize(rootname)
-
     fcl_path = getFCLPath(options['fcl'])
-    print('fcl_path', fcl_path)
     the_md['DUNE.fcl_path'] = fcl_path[0]
     the_md['DUNE.fcl_name'] = options['fcl']
     the_md['DUNE.fcl_version_tag'] = the_md['application']['version']
+
+    the_md['info.memory'] = ram
+    the_md['info.cpusec'] = cpu
+    the_md['info.wallsec'] = wall
+    the_md['info.physicsgroup'] = 'dunepdhd'
 
     if options['fix_count']:
       print('Fixing count')
@@ -68,6 +71,7 @@ def fillMeta(rootname, jsonname, status, options):
 
     with open(jsonname.replace(".json", "_filled.json"), 'w') as f:
       json.dump(the_md, f, indent=2, separators=(',', ': '))
+
 
 ##Set up arguments
 ##A lot of these are the same from what fife_wrap passes to lar
@@ -85,7 +89,7 @@ parser.add_argument('-n', type=int, help='N events', default=10)
 parser.add_argument('-j', type=str, help='JSON filename produced by module',
                     default='ana_hist.root.json')
 parser.add_argument('--rootname', type=str, help='', required=True)
-parser.add_argument('--fix_count', type=int, help='', default = 0)
+parser.add_argument('--fix_count', action='store_true')
 
 args = parser.parse_args()
 json_name = args.j
@@ -103,9 +107,23 @@ lar_cmd = ["lar", "-c%s" % args.c, "-n%i" % args.n,
            #"--sam-application-version=%s" % args.sam_application_version]
 
 ##Call larsoft command
-proc = subprocess.run(lar_cmd)
+logfile = open('temp.out', 'w')
+#errfile = open('temp.err', 'w')
+proc = subprocess.run(lar_cmd, stdout=logfile)
 status = proc.returncode
 print("Status:", status)
+logfile.close()
+cpu = -1.
+ram = -1.
+wall = -1.
+with open('temp.out', 'r') as f:
+  for l in f:
+    print(l)
+    if 'TimeReport' in l and 'CPU' in l:
+      cpu = float(l.split()[3])
+      wall = float(l.split()[6])
+    if 'MemReport' in l and 'VmHWM' in l:
+      ram = float(l.split()[6])
 
 if status != 0:
   exit(status)
@@ -124,8 +142,12 @@ opts = {
   "runType": "protodune-sp",
   "dataTier": "storage-testing",
   "dataStream": "physics",
-  "fix_count": args.fix_count
+  "fix_count": args.fix_count,
+  "cpu": cpu,
+  "ram": ram,
+  "wall": wall
 }
+
 
 ##FIll in info from the parents
 fillMeta(args.rootname, json_name, status, opts)
