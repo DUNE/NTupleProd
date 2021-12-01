@@ -54,7 +54,7 @@ def fillMeta(rootname, jsonname, status, options):
     the_md['file_name'] = rootname
     the_md['file_size'] = os.path.getsize(rootname)
     fcl_path = getFCLPath(options['fcl'])
-    the_md['DUNE.fcl_path'] = fcl_path[0]
+    the_md['DUNE.fcl_path'] = fcl_path
     the_md['DUNE.fcl_name'] = options['fcl']
     the_md['DUNE.fcl_version_tag'] = the_md['application']['version']
 
