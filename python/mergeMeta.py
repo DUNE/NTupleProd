@@ -9,6 +9,7 @@ import samweb_client
 from samweb_client import utility
 import json
 import argparse
+from statistics import mean
 
 samweb = samweb_client.SAMWebClient(experiment='dune')
 
@@ -35,9 +36,10 @@ class mergeMeta():
     self.samweb = samweb_client.SAMWebClient(experiment='dune')
     self.externals = ["file_name","start_time","end_time","file_size"]
     #self.consistent = ["file_type","file_format","data_tier","group","data_stream" ]
-    self.consistent = ["file_type","file_format","data_tier","group"]
+    self.consistent = ["file_type","file_format","data_tier","group", 'application']
     self.ignore = ["checksum","create_date","Offline.options","first_event","parents","Offline.machine","last_event"]
     self.source = "samweb" # alternative = local
+    self.special = ['info.wallsec', 'info.memory', 'info.cpusec', 'DUNE.fcl_name']
     self.debug = False
 
 ############################################
@@ -51,7 +53,10 @@ class mergeMeta():
     fail = True
   
     ##Look through the file list and get the metadata for each
+    a = 0
     for f in the_list:
+      if not a%100: print('%i/%i'%(a, len(the_list)), end='\r')
+      a += 1
       filename = os.path.basename(f)
       if self.source == "local":
         if not os.path.exists(f):
@@ -117,7 +122,11 @@ class mergeMeta():
       checks[tag] = []
  
     # loop over files in the list
+    a = 0
+    special_md = {}
     for f in the_list:
+      if not a%100: print('%i/%i'%(a, len(the_list)), end='\r')
+      a += 1
       filename = os.path.basename(f)
       #get the metadata for each file
       if self.source == "local":
@@ -144,7 +153,11 @@ class mergeMeta():
             tag not in self.externals and tag not in mix):
           if self.debug:
             print (" found a new parameter to worry about", tag)
-          mix[tag]=[thismeta[tag]]
+          if tag in self.special:
+            #print('special', tag)
+            self.getSpecialMD(tag, thismeta[tag], special_md)
+          else:
+            mix[tag]=[thismeta[tag]]
       if self.debug:
         dumpList(thismeta)
       #print ("meta is", thismeta)
@@ -202,10 +215,15 @@ class mergeMeta():
         newJsonData[tag] = mix[tag][0]
       elif len(mix[tag]) > 1:
         print ("don't write out mixed tags", tag)
+        #print (mix[tag])
+
+    self.finishSpecialMD(special_md)
 
     # overwrite with the externals if they are there
     for tag in externals:
       newJsonData[tag] = externals[tag]
+    for tag in special_md:
+      newJsonData[tag] = special_md[tag]
   
     #if no event count was provided from externals, use the input files
     if("event_count" not in newJsonData or newJsonData["event_count"] == -1):
@@ -302,42 +320,46 @@ class mergeMeta():
     with open(new_json_filename , 'w') as f:
       json.dump(filled_meta, f, indent=2, separators=(',', ': '))
 
-if __name__ == "__main__":
-  
-  parser = argparse.ArgumentParser(description='Merge Meta')
-  parser.add_argument("-f", type=str, help="Name of merged root file", default="new.root")
-  parser.add_argument('-j', help='List of json files', nargs='+', default=[])
-  parser.add_argument('-s', help='Do Sort?', default=1, type=int)
-  parser.add_argument('-t', help='local or samweb', type=str, default='samweb')
-  args = parser.parse_args()
+  def getSpecialMD(self, tag, val, special_md):
+    if tag in ['info.wallsec', 'info.cpusec']:
+      if tag not in special_md.keys():
+        special_md[tag] = 0.
+      special_md[tag] += val
+    elif tag == 'info.memory':
+      if tag not in special_md.keys():
+        special_md[tag] = []
+      special_md[tag].append(val)
+    elif tag == 'DUNE.fcl_name':
+      special_md[tag] = val.split('/')[-1]
 
+  def finishSpecialMD(self, special_md):
+    if 'info.memory' in special_md.keys():
+      special_md['info.memory'] = mean(special_md['info.memory'])
+
+def run_merge(filename, jsonlist, merge_type, do_sort=0):
   opts = {}
-  
-  filename = args.f
-  
-  
   maker = mergeMeta(opts)
-  if args.t == 'local':
+  if merge_type == 'local':
     maker.setSourceLocal()
-  elif args.t == 'samweb':
+  elif merge_type == 'samweb':
     maker.setSourceSamweb()
   else:
-    print('error: mergeMeta -t provided is not local or samweb', args.t)
-    exit(1)
+    print('error: mergeMeta -t provided is not local or samweb', merge_type)
+    return 1
 
-  inputfiles = args.j
+  inputfiles = jsonlist 
   #print (inputfiles)
 
-  if (args.s != 0):
+  if (do_sort != 0):
     inputfiles.sort()
     
-  app_info = {
-    "family": "protoduneana",
-    "name": "pdspana",
-    "version": os.getenv("PROTODUNEANA_VERSION")
-  } 
+  #app_info = {
+  #  "family": "protoduneana",
+  #  "name": "pdspana",
+  #  "version": os.getenv("PROTODUNEANA_VERSION")
+  #} 
   externals = {"file_name": filename,
-               "application": app_info,
+               #"application": app_info,
                "data_tier": "root-tuple",
                "file_size": os.path.getsize(filename),
                "data_stream": "physics",
@@ -350,14 +372,27 @@ if __name__ == "__main__":
   DEBUG = 0
   if DEBUG:
     print (externals)
-  test = maker.checkmerge(inputfiles)
-  print ("merge status",test)
-  if test:
-    print ("concatenate")
-    meta = maker.concatenate(inputfiles,externals)
+  #test = maker.checkmerge(inputfiles)
+  #print ("merge status",test)
+  #if test:
+  print ("concatenate")
+  meta = maker.concatenate(inputfiles,externals)
   print ("done")
   #print(meta)
 
   f = open(filename+".json",'w')
   json.dump(meta,f, indent=2,separators=(',',': '))
+
+  return 0
   
+
+if __name__ == "__main__":
+  
+  parser = argparse.ArgumentParser(description='Merge Meta')
+  parser.add_argument("-f", type=str, help="Name of merged root file", default="new.root")
+  parser.add_argument('-j', help='List of json files', nargs='+', default=[])
+  parser.add_argument('-s', help='Do Sort?', default=1, type=int)
+  parser.add_argument('-t', help='local or samweb', type=str, default='samweb')
+  args = parser.parse_args()
+
+  run_merge(filename=args.f, jsonlist=args.j, do_sort=args.s, merge_type=args.t)
