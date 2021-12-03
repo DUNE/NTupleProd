@@ -17,5 +17,6 @@ Common:
      envSet(EXPERIMENT, dune)
      envSet(SAM_EXPERIMENT, dune)
      pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
+     pathPrepend(PATH, ${UPS_PROD_DIR}/python)
 
 End:
