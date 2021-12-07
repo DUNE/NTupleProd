@@ -16,6 +16,7 @@ Common:
      envSet(JOBSUB_GROUP, dune)
      envSet(EXPERIMENT, dune)
      envSet(SAM_EXPERIMENT, dune)
+     envSet(NTUPLEPROD_CFG_PATH, ${UPS_PROD_DIR}/cfg_files)
      pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
      pathPrepend(PATH, ${UPS_PROD_DIR}/python)
 
