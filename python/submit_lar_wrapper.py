@@ -7,7 +7,7 @@ from glob import glob as ls
 
 parser = argparse.ArgumentParser(description = 'Submission script for lar_wrapper')
 parser.add_argument('--config', type=str, help='Which config', default=None)
-parser.add_argument('--fcl', type=str, help='FCL file name', required=True)
+parser.add_argument('--fcl', type=str, help='FCL file name', default="")
 parser.add_argument('--output_dir', type=str, help='Output top dir', default=None)
 parser.add_argument('--extra_dir', type=str, help='Output lower level dir', default=None)
 parser.add_argument('--dataset', type=str, help='Which dataset', default=None)
@@ -27,6 +27,9 @@ if args.config:
 else:
   cmd += ['%s/lar_wrapper.cfg'%os.getenv('NTUPLEPROD_CFG_PATH')]
 
+if args.fcl == "":
+  print('Error. Must supply a fcl file with --fcl')
+  exit(1)
 
 fcl_name = args.fcl.split('/')[-1]
 cmd += ['-Oglobal.fcl_name=%s'%fcl_name]
