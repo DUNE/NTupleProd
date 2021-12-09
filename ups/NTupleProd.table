@@ -1,0 +1,23 @@
+File    = table
+Product = NTupleProd 
+
+Group:
+
+  Flavor    = ANY
+  Qualifiers = ""
+
+Common:
+  Action = setup
+     prodDir()
+     setupEnv()
+     envSet(${UPS_PROD_NAME_UC}_VERSION, ${UPS_PROD_VERSION})
+     setupRequired(protoduneana v09_39_01 -q +e20:+prof)
+     setupRequired(fife_utils v3_3_2)
+     envSet(JOBSUB_GROUP, dune)
+     envSet(EXPERIMENT, dune)
+     envSet(SAM_EXPERIMENT, dune)
+     envSet(NTUPLEPROD_CFG_PATH, ${UPS_PROD_DIR}/cfg_files)
+     pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
+     pathPrepend(PATH, ${UPS_PROD_DIR}/python)
+
+End:
