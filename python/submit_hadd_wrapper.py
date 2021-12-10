@@ -49,7 +49,7 @@ if len(args.listname.split('/')) < 2:
 bare_listname = args.listname.split('/')[-1]
 cmd += ['-Oglobal.listname=%s'%bare_listname]
 listpath = '/'.join(args.listname.split('/')[:-1])
-cmd += ['-Oglobal.listloc=%s'%listpath]
+cmd += ['-Oglobal.listloc=dropbox://%s'%listpath]
 
 cmd += ['-Oglobal.split=%i'%args.split]
 cmd += ['-Oglobal.output_name=%s'%args.output_name]
