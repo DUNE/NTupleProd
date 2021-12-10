@@ -34,9 +34,11 @@ if args.fcl == "":
 fcl_name = args.fcl.split('/')[-1]
 cmd += ['-Oglobal.fcl_name=%s'%fcl_name]
 
+
 if len(args.fcl.split('/')) > 1:
-  path = '/%s'%('/'.join(args.fcl.split('/')[:-1]))
-  cmd += ['-Osubmit.f_0=%s/%s'%(path, fcl_name)]
+
+  path = '%s'%('/'.join(args.fcl.split('/')[:-1]))
+  cmd += ['-Osubmit.f_0=dropbox://%s/%s'%(path, fcl_name)]
 else:
   cmd += ['-Oexecutable.arg_2=%s'%fcl_name]
 
