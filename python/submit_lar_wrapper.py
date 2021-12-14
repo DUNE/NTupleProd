@@ -9,10 +9,17 @@ parser = argparse.ArgumentParser(description = 'Submission script for lar_wrappe
 parser.add_argument('--config', type=str, help='Which config', default=None)
 parser.add_argument('--fcl', type=str, help='FCL file name', default="")
 parser.add_argument('--output_dir', type=str, help='Output top dir', default=None)
-parser.add_argument('--extra_dir', type=str, help='Output lower level dir', default=None)
+parser.add_argument('--extra_dir', type=str, help='Output lower level dir',
+                    default=None)
 parser.add_argument('--dataset', type=str, help='Which dataset', default=None)
-parser.add_argument('--dry_run', action='store_true', help='Tell fife_launch to do a dry_run')
+parser.add_argument('--dry_run', action='store_true',
+                    help='Tell fife_launch to do a dry_run')
 parser.add_argument('--ls_cfg', action='store_true', help='ls cfg directory')
+
+parser.add_argument('--nevents', type=int,
+                    help='Override nevents within the lar_wrapper', default=50)
+parser.add_argument('--n_files_per_job', type=int,
+                    help='Override n_files_per_job within the lar_wrapper', default=5)
 
 args = parser.parse_args()
 
@@ -56,6 +63,8 @@ if args.dry_run:
 
 cmd += ['-Oglobal.ntupleprod_version=%s'%os.getenv('NTUPLEPROD_VERSION')]
 
+cmd += ['-Oglobal.nevents=%i'%args.nevents]
+cmd += ['-Osubmit.n_files_per_job=%i'%args.n_files_per_job]
 
 print(cmd)
 
