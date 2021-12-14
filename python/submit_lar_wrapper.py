@@ -25,21 +25,21 @@ parser.add_argument('--pduneana_tar', type=str, default='',
 
 args = parser.parse_args()
 
-##ls cfg directory
+##Just ls and exit
 if args.ls_cfg:
   print(ls('%s/*cfg'%os.getenv('NTUPLEPROD_CFG_PATH')))
   exit(0)
 
-##start fife_launch command
+##Begin fife_launch cmd 
 cmd = ['fife_launch', '-c']
 
-##point to config file
+##Pick cfgs
 if args.config:
   cmd += [args.config]
 else:
   cmd += ['%s/lar_wrapper.cfg'%os.getenv('NTUPLEPROD_CFG_PATH')]
 
-##need a fcl
+##Need a fcl
 if args.fcl == "":
   print('Error. Must supply a fcl file with --fcl')
   exit(1)
@@ -48,14 +48,14 @@ cmd += ['-Oglobal.fcl_name=%s'%fcl_name]
 
 
 ##with a path, assume it's to be dropboxed in
-##with out, assume it's installed
+##without, assume it's installed
 if len(args.fcl.split('/')) > 1:
   path = '%s'%('/'.join(args.fcl.split('/')[:-1]))
   cmd += ['-Osubmit.f_0=dropbox://%s/%s'%(path, fcl_name)]
 else:
   cmd += ['-Oexecutable.arg_2=%s'%fcl_name]
 
-##what dataset to run over
+##Dataset
 if args.dataset:
   cmd += ['-Osubmit.dataset=%s'%args.dataset]
 
