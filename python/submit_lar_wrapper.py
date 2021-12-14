@@ -20,53 +20,70 @@ parser.add_argument('--nevents', type=int,
                     help='Override nevents within the lar_wrapper', default=50)
 parser.add_argument('--n_files_per_job', type=int,
                     help='Override n_files_per_job within the lar_wrapper', default=5)
+parser.add_argument('--pduneana_tar', type=str, default='',
+                    help='Optional Protoduneana tarball to be set up before NTupleProd')
 
 args = parser.parse_args()
 
+##ls cfg directory
 if args.ls_cfg:
   print(ls('%s/*cfg'%os.getenv('NTUPLEPROD_CFG_PATH')))
   exit(0)
 
+##start fife_launch command
 cmd = ['fife_launch', '-c']
 
+##point to config file
 if args.config:
   cmd += [args.config]
 else:
   cmd += ['%s/lar_wrapper.cfg'%os.getenv('NTUPLEPROD_CFG_PATH')]
 
+##need a fcl
 if args.fcl == "":
   print('Error. Must supply a fcl file with --fcl')
   exit(1)
-
 fcl_name = args.fcl.split('/')[-1]
 cmd += ['-Oglobal.fcl_name=%s'%fcl_name]
 
 
+##with a path, assume it's to be dropboxed in
+##with out, assume it's installed
 if len(args.fcl.split('/')) > 1:
-
   path = '%s'%('/'.join(args.fcl.split('/')[:-1]))
   cmd += ['-Osubmit.f_0=dropbox://%s/%s'%(path, fcl_name)]
 else:
   cmd += ['-Oexecutable.arg_2=%s'%fcl_name]
 
+##what dataset to run over
 if args.dataset:
   cmd += ['-Osubmit.dataset=%s'%args.dataset]
 
+##output locations
 if args.output_dir:
   cmd += ['-Oenv_pass.OUTPUT_DIR=%s'%args.output_dir]
-
 if args.extra_dir:
   cmd += ['-Oenv_pass.EXTRA_DIR=%s'%args.extra_dir]
 
+##tell fife_launch to just do a dry run
 if args.dry_run:
   cmd += ['--dry_run']
 
+##NTupleProd version
 cmd += ['-Oglobal.ntupleprod_version=%s'%os.getenv('NTUPLEPROD_VERSION')]
 
+##Nevents and files per job overrides
 cmd += ['-Oglobal.nevents=%i'%args.nevents]
 cmd += ['-Osubmit.n_files_per_job=%i'%args.n_files_per_job]
 
+##Special commands for overriding some setup stuff
+if not args.pduneana_tar == '':
+  cmd += ['-Ojob_setup.setup_local=True',
+          '-Osubmit.tar_file_name=%s'%args.pduneana_tar, 
+          '-Ojob_setup.setup=-?',#hack to nullify the setup
+          '-Ojob_setup.prescript=source `ups setup NTupleProd -v %(ntupleprod_version)s`'
+         ]
+
+##Call it
 print(cmd)
-
-
 subprocess.run(cmd)
