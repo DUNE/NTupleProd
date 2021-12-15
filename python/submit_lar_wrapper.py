@@ -80,8 +80,8 @@ cmd += ['-Osubmit.n_files_per_job=%i'%args.n_files_per_job]
 if not args.pduneana_tar == '':
   cmd += ['-Ojob_setup.setup_local=True',
           '-Osubmit.tar_file_name=%s'%args.pduneana_tar, 
-          '-Ojob_setup.setup=-?',#hack to nullify the setup
-          '-Ojob_setup.prescript=source `ups setup NTupleProd -v %(ntupleprod_version)s`'
+          '-Ojob_setup.setup=NTupleProd %(ntupleprod_version)s',
+          '-Ojob_setup.prescript_0=ups active',
          ]
 
 ##Call it
