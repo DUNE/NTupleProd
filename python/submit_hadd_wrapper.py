@@ -71,14 +71,6 @@ cmd += ['-Oglobal.output_name=%s'%args.output_name]
 cmd += ['-Osubmit.expected-lifetime=%s'%args.lifetime]
 
 
-##Special commands for overriding some setup stuff
-if not args.pduneana_tar == '':
-  cmd += ['-Ojob_setup.setup_local=True',
-          '-Osubmit.tar_file_name=%s'%args.pduneana_tar, 
-          '-Ojob_setup.setup=-?',#hack to nullify the setup
-          '-Ojob_setup.prescript=source `ups setup NTupleProd -v %(ntupleprod_version)s`'
-         ]
-
 print(cmd)
 
 subprocess.run(cmd)
