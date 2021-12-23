@@ -13,6 +13,7 @@ parser.add_argument("-c", type=str, help="Name of fcl file", default="test.fcl")
 parser.add_argument("-n", type=int, help="n events", default=20)
 parser.add_argument('-w', type=int, help='Use wrapper?', default=0)
 parser.add_argument('-f', type=int, help='N files?', default=3)
+parser.add_argument('-p', type=str, help='Project', default="schellma-1GeVMC-test")
 args = parser.parse_args()
 
  
@@ -39,11 +40,11 @@ samweb = samweb_client.SAMWebClient(experiment='dune')
 def mytime():
   return datetime.datetime.now().strftime("%Y-%m-%d-%H%M.%S")
 
-def test():
+def test(project_name):
   
   #larargs = ["-c./test.fcl"]+["-n100"]
   larargs = ["-c" + args.c]+["-n%i"%args.n]
-  project_name = "schellma-1GeVMC-test"
+  #project_name = "schellma-1GeVMC-test"
   samExample(project_name,larargs)
   
 
@@ -199,4 +200,4 @@ def samExample(def_name,larargs):
   out = samweb.projectSummaryText(project_url)
   print (out)
 
-test()
+test(args.p)
