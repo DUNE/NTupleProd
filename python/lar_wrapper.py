@@ -21,12 +21,11 @@ def searchFCLPath2(fcl_file):
   split_path = os.environ['FHICL_FILE_PATH'].split(':')
   print(split_path)
 
-  results = []
   for p in set(split_path):
     if len(ls("%s/%s"%(p, fcl_file))) > 0:
       print('found', p)
-      results.append(p)
-  return results
+      return p
+  return '' 
 
 def getFCLPath(fcl_file):
   if fcl_file[0] == '.':
