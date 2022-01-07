@@ -23,6 +23,11 @@ parser.add_argument('--n_files_per_job', type=int,
 parser.add_argument('--pduneana_tar', type=str, default='',
                     help='Optional Protoduneana tarball to be set up before NTupleProd')
 
+parser.add_argument('--use_dune_int', action='store_true')
+parser.add_argument('--sites', type=str, nargs='+')
+parser.add_argument('--blacklist', type=str, nargs='+')
+parser.add_argument('--memory', type=str, default=None)
+
 args = parser.parse_args()
 
 ##Just ls and exit
@@ -84,6 +89,22 @@ if not args.pduneana_tar == '':
           '-Ojob_setup.prescript_0=ups active',
          ]
 
+if args.use_dune_int:
+  cmd += ['-Oenv_pass.SAM_STATION=dune-int']
+
+if args.sites and len(args.sites) > 0:
+  print("Sites:", args.sites)
+  cmd += ['-Osubmit.site=%s'%','.join(args.sites)]
+
+if args.blacklist and len(args.blacklist) > 0:
+  print("Blacklist:", args.blacklist)
+  cmd += ['-Osubmit.blacklist=%s'%','.join(args.blacklist)]
+
+if args.memory:
+  print("Setting memory to", args.memory)
+  cmd += ['-Osubmit.memory=%s'%args.memory]
+
+cmd += ['-Ojob_setup.prescript_1=env']
 ##Call it
 print(cmd)
 subprocess.run(cmd)
