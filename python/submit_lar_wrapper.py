@@ -17,7 +17,7 @@ parser.add_argument('--dry_run', action='store_true',
 parser.add_argument('--ls_cfg', action='store_true', help='ls cfg directory')
 
 parser.add_argument('--nevents', type=int,
-                    help='Override nevents within the lar_wrapper', default=50)
+                    help='Override nevents within the lar_wrapper', default=-1)
 parser.add_argument('--n_files_per_job', type=int,
                     help='Override n_files_per_job within the lar_wrapper', default=5)
 parser.add_argument('--pduneana_tar', type=str, default='',
