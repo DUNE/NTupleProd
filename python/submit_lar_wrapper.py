@@ -14,6 +14,8 @@ parser.add_argument('--extra_dir', type=str, help='Output lower level dir',
 parser.add_argument('--dataset', type=str, help='Which dataset', default=None)
 parser.add_argument('--dry_run', action='store_true',
                     help='Tell fife_launch to do a dry_run')
+parser.add_argument('--config_dump', action='store_true',
+                    help='Tell fife_launch to do a config_dump')
 parser.add_argument('--ls_cfg', action='store_true', help='ls cfg directory')
 
 parser.add_argument('--nevents', type=int,
@@ -73,6 +75,9 @@ if args.extra_dir:
 ##tell fife_launch to just do a dry run
 if args.dry_run:
   cmd += ['--dry_run']
+
+if args.config_dump:
+  cmd += ['--config_dump=after']
 
 ##NTupleProd version
 cmd += ['-Oglobal.ntupleprod_version=%s'%os.getenv('NTUPLEPROD_VERSION')]
