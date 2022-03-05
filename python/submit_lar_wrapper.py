@@ -29,6 +29,8 @@ parser.add_argument('--use_dune_int', action='store_true')
 parser.add_argument('--sites', type=str, nargs='+')
 parser.add_argument('--blacklist', type=str, nargs='+')
 parser.add_argument('--memory', type=str, default=None)
+parser.add_argument('--lifetime', type=str, default=None)
+parser.add_argument('--sam_limit', type=int, default=18)
 
 args = parser.parse_args()
 
@@ -85,6 +87,7 @@ cmd += ['-Oglobal.ntupleprod_version=%s'%os.getenv('NTUPLEPROD_VERSION')]
 ##Nevents and files per job overrides
 cmd += ['-Oglobal.nevents=%i'%args.nevents]
 cmd += ['-Osubmit.n_files_per_job=%i'%args.n_files_per_job]
+cmd += ['-Osam_consumer.limit=%i'%args.sam_limit]
 
 ##Special commands for overriding some setup stuff
 if not args.pduneana_tar == '':
@@ -108,6 +111,10 @@ if args.blacklist and len(args.blacklist) > 0:
 if args.memory:
   print("Setting memory to", args.memory)
   cmd += ['-Osubmit.memory=%s'%args.memory]
+
+if args.lifetime:
+  print("Setting lifetime to", args.lifetime)
+  cmd += ['-Osubmit.expected-lifetime=%s'%args.lifetime]
 
 cmd += ['-Ojob_setup.prescript_1=env']
 ##Call it
