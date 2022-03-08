@@ -11,7 +11,7 @@ Common:
      prodDir()
      setupEnv()
      envSet(${UPS_PROD_NAME_UC}_VERSION, ${UPS_PROD_VERSION})
-     setupRequired(dunesw v09_42_03_01 -q +e20:+prof)
+     setupRequired(dunesw v09_44_00_01 -q +e20:+prof)
      setupRequired(fife_utils v3_3_2)
      envSet(JOBSUB_GROUP, dune)
      envSet(EXPERIMENT, dune)
