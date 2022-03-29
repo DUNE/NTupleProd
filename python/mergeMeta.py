@@ -96,7 +96,7 @@ class mergeMeta():
     return True
 
   
-  def concatenate(self, the_list, externals):
+  def concatenate(self, the_list, externals, user=''):
     # here are things that are unique to the output and must be supplied externally
     for tag in self.externals:
       if not tag in externals:
@@ -255,10 +255,12 @@ class mergeMeta():
     if(self.debug):
       print ("-------------------\n")
       dumpList(newJsonData)
-    try:
-      self.samweb.validateFileMetadata(newJsonData)
-    except Exception:
-      print (" metadata validation failed - write it out anyways")
+    if user != '': newJsonData['user'] = user
+    self.samweb.validateFileMetadata(newJsonData)
+    #try:
+    #  self.samweb.validateFileMetadata(newJsonData)
+    #except Exception:
+    #  print (" metadata validation failed - write it out anyways")
     return newJsonData
    
   def setDebug(self, debug=True):
@@ -336,7 +338,7 @@ class mergeMeta():
     if 'info.memory' in special_md.keys():
       special_md['info.memory'] = mean(special_md['info.memory'])
 
-def run_merge(filename, jsonlist, merge_type, do_sort=0):
+def run_merge(filename, jsonlist, merge_type, do_sort=0, user=''):
   opts = {}
   maker = mergeMeta(opts)
   if merge_type == 'local':
@@ -376,7 +378,7 @@ def run_merge(filename, jsonlist, merge_type, do_sort=0):
   #print ("merge status",test)
   #if test:
   print ("concatenate")
-  meta = maker.concatenate(inputfiles,externals)
+  meta = maker.concatenate(inputfiles,externals, user=user)
   print ("done")
   #print(meta)
 
@@ -393,6 +395,7 @@ if __name__ == "__main__":
   parser.add_argument('-j', help='List of json files', nargs='+', default=[])
   parser.add_argument('-s', help='Do Sort?', default=1, type=int)
   parser.add_argument('-t', help='local or samweb', type=str, default='samweb')
+  parser.add_argument('-u', help='Patch user to specified. Leave empty to not patch', type=str, default='')
   args = parser.parse_args()
 
-  run_merge(filename=args.f, jsonlist=args.j, do_sort=args.s, merge_type=args.t)
+  run_merge(filename=args.f, jsonlist=args.j, do_sort=args.s, merge_type=args.t, user=args.u)

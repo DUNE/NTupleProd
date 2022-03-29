@@ -12,6 +12,7 @@ parser.add_argument('-o', type=str, help='Name of output file', required=True)
 parser.add_argument('--usedb', type=int, help='Use db?', default=0)
 parser.add_argument('--dataset', type=str, help='Dataset?', default='')
 parser.add_argument('-N', type=int, help='Split', default=1)
+parser.add_argument('-u', type=str, help='User to override in json', default='')
 args = parser.parse_args()
 
 
@@ -111,7 +112,10 @@ else:
 #merge_cmd += ['-j'] + json_files
 
 
-status = mergeMeta.run_merge(filename=args.o, jsonlist=json_files, merge_type=('local' if args.usedb == 0 else 'samweb'))
+status = mergeMeta.run_merge(
+    filename=args.o, jsonlist=json_files,
+    merge_type=('local' if args.usedb == 0 else 'samweb'),
+    user=args.u)
 
 #proc = subprocess.run(merge_cmd)
 #status = proc.returncode
