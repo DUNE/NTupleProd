@@ -12,7 +12,7 @@ Common:
      setupEnv()
      envSet(${UPS_PROD_NAME_UC}_VERSION, ${UPS_PROD_VERSION})
      setupRequired(dunesw v09_44_00_02 -q +e20:+prof)
-     setupRequired(fife_utils v3_3_2)
+     setupRequired(fife_utils)
      envSet(JOBSUB_GROUP, dune)
      envSet(EXPERIMENT, dune)
      envSet(SAM_EXPERIMENT, dune)
