@@ -70,9 +70,11 @@ if args.dataset:
 
 ##output locations
 if args.output_dir:
-  cmd += ['-Oenv_pass.OUTPUT_DIR=%s'%args.output_dir]
+  #cmd += ['-Oenv_pass.OUTPUT_DIR=%s'%args.output_dir]
+  cmd += ['-Oglobal.output_dir=%s'%args.output_dir]
 if args.extra_dir:
-  cmd += ['-Oenv_pass.EXTRA_DIR=%s'%args.extra_dir]
+  #cmd += ['-Oenv_pass.EXTRA_DIR=%s'%args.extra_dir]
+  cmd += ['-Oglobal.extra_dir=%s'%args.extra_dir]
 
 ##tell fife_launch to just do a dry run
 if args.dry_run:
