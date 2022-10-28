@@ -68,8 +68,9 @@ if args.usedb != 0:
     urls = samweb.getFileAccessUrls(f.split('/')[-1], 'xroot')
     if len(urls) == 0:
       print('ERROR: CANNOT FIND FILE', f.split('/')[-1])
-      exit(1)
-    new_root_files.append(urls[0])
+      #exit(1)
+    else:
+      new_root_files.append(urls[0])
     a += 1
   root_files = new_root_files
 

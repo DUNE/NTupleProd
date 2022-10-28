@@ -33,6 +33,8 @@ if args.user:
   not_parent += " and user %s"%args.user
 if args.new_dataset:
   not_parent += ' and defname:%s'%args.new_dataset
+if args.version:
+  not_parent += ' and version %s'%args.version
 
 query = "defname:%s and not isparentof:(%s)"%(args.dataset, not_parent)
 
