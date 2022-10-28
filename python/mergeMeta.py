@@ -27,6 +27,8 @@ def timeform(now):
   nowTstamp= time.strptime(nowtime,timeFormat)
   return int(time.mktime(nowTstamp))
 
+ 
+
 
 class mergeMeta():
   #""" Base class for making metadata for a file based on parents"""
@@ -126,6 +128,7 @@ class mergeMeta():
     special_md = {}
     for f in the_list:
       if not a%100: print('%i/%i'%(a, len(the_list)), end='\r')
+      #print('%i/%i'%(a, len(the_list)))
       a += 1
       filename = os.path.basename(f)
       #get the metadata for each file
@@ -386,7 +389,7 @@ def run_merge(filename, jsonlist, merge_type, do_sort=0, user=''):
   json.dump(meta,f, indent=2,separators=(',',': '))
 
   return 0
-  
+ 
 
 if __name__ == "__main__":
   
