@@ -17,7 +17,7 @@ def retire_files(files):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Script to retire temporary files')
   parser.add_argument('-u', type=str, help='Username', default='calcuttj')
-  parser.add_argument('-t', type=str, help='data tier')
+  parser.add_argument('-t', type=str, help='data tier', default='root-tuple-virtual')
   parser.add_argument('--dry_run', action='store_true')
   parser.add_argument('-d', type=str,
                       help='Add check for if the file is a child of a file matching this dataset)',
@@ -30,6 +30,7 @@ if __name__ == '__main__':
   query = "user %s and data_tier %s"%(args.u, args.t)
   if not args.d=='':
     query += " and ischildof:(defname:%s)"%args.d
+  print(query)
   files = samweb.listFiles(query)
   
   if args.l:
