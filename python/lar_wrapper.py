@@ -126,7 +126,7 @@ with open('temp.out', 'r') as f:
       ram = float(l.split()[6])
 print ("Got to before loginator")
 
-logparser = Loginator("temp.out")
+logparser = Loginator.Loginator("temp.out")
 logparser.readme()
 logparser.addinfo(logparser.getinfo())
 logparser.addsaminfo()

@@ -52,7 +52,9 @@ class Loginator:
             "workflow_method":None,
             "path":None,
             "namespace":None,
-            "real_memory":None
+            "real_memory":None,
+            "project_id":None,
+            "delivery_method":None
         }
        
 ## return the first tag or None in a line
@@ -126,7 +128,7 @@ class Loginator:
         for f in self.outobject:
             print ("f ",f)
             meta = samweb.getMetadata(f)
-            for item in ["data_tier","file_type","data_stream","group"]:
+            for item in ["data_tier","file_type","data_stream","group","file_size"]:
                 self.outobject[f][item]=meta[item]
             count = 0
             for run in meta["runs"]:
