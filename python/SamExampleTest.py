@@ -13,7 +13,6 @@ parser.add_argument("-c", type=str, help="Name of fcl file", default="test.fcl")
 parser.add_argument("-n", type=int, help="n events", default=20)
 parser.add_argument('-w', type=int, help='Use wrapper?', default=0)
 parser.add_argument('-f', type=int, help='N files?', default=3)
-parser.add_argument('-p', type=str, help='Project', default="schellma-1GeVMC-test")
 args = parser.parse_args()
 
  
@@ -40,13 +39,11 @@ samweb = samweb_client.SAMWebClient(experiment='dune')
 def mytime():
   return datetime.datetime.now().strftime("%Y-%m-%d-%H%M.%S")
 
-def test(project_name):
+def test():
   
   #larargs = ["-c./test.fcl"]+["-n100"]
   larargs = ["-c" + args.c]+["-n%i"%args.n]
-  if not os.path.exists(args.c):
-    print ("Cannnot find fcl file",args.c)
-  #project_name = "schellma-1GeVMC-test"
+  project_name = "schellma-1GeVMC-test"
   samExample(project_name,larargs)
   
 
@@ -186,20 +183,9 @@ def samExample(def_name,larargs):
     print (" larsoft returned status", status)
  
     #if we got this far then we trust the project so mark it as completed
-    try:
-        if consumerok:
-          print ("SamExample:",mytime(), " set consumer ", consumer_id, "ok")
-          samweb.stopProcess(process_url )
-         
-        else:
-          print ("SamExample:",mytime(), " set consumer ", consumer_id, "bad")
-          samweb.setProcessStatus('bad',process_url )
-         
-    except Exception:
-        print ("SamExample:",mytime()," can't even set to bad as consumer status failed",e)
-      
+    
   samweb.stopProject(project_url)
   out = samweb.projectSummaryText(project_url)
   print (out)
 
-test(args.p)
+test()

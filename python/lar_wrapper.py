@@ -7,6 +7,7 @@ from mergeMeta import *
 import samweb_client
 import json
 import ROOT as RT
+import Loginator
 
 from glob import glob as ls
 
@@ -123,6 +124,15 @@ with open('temp.out', 'r') as f:
       wall = float(l.split()[6])
     if 'MemReport' in l and 'VmHWM' in l:
       ram = float(l.split()[6])
+print ("Got to before loginator")
+
+logparser = Loginator("temp.out")
+logparser.readme()
+logparser.addinfo(logparser.getinfo())
+logparser.addsaminfo()
+list = logparser.writeme()
+print ("things to send to elasticsearch",list)
+
 
 if status != 0:
   exit(status)

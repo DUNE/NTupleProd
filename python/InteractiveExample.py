@@ -44,8 +44,6 @@ def test(project_name):
   
   #larargs = ["-c./test.fcl"]+["-n100"]
   larargs = ["-c" + args.c]+["-n%i"%args.n]
-  if not os.path.exists(args.c):
-    print ("Cannnot find fcl file",args.c)
   #project_name = "schellma-1GeVMC-test"
   samExample(project_name,larargs)
   
