@@ -36,7 +36,7 @@ class Loginator:
             "timestamp_for_start":None,  #
             "timestamp_for_end":None,  #
             "duration":None,  # (difference between end and start)
-            "input_file_size":None,  #
+            "file_size":None,  #
             "application_family":None,  #
             "application_name":None,  #
             "application_version":None,  #
@@ -51,8 +51,9 @@ class Loginator:
             "job_site":None,  # (name of the site)
             "country":None,  # (nationality of the site)
             "campaign":None,  # (DUNE campaign)
-            "access_method":None, #(stream/copy)
+            "delivery_method":None, #(stream/copy)
             "workflow_method":None,
+            "access_method":None, #(samweb/dd)
             "path":None,
             "namespace":None,
             "real_memory":None,
@@ -96,14 +97,14 @@ class Loginator:
                 if "Opened" in tag and not filename in object.keys():
                     object[filename] = self.template
                     object[filename]["timestamp_for_start"] = timestamp
-                    object[filename]["Path"]=filepath
+                    object[filename]["path"]=filepath
                     object[filename]["file_name"] = filename
                     print ("filepath",filepath)
                     if "root" in filepath[0:10]:
                         print ("I am root")
                         tmp = filepath.split("//")
                         object[filename]["source_rse"] = tmp[1]
-                        object[filename]["access_method"] = "xroot"
+                        object[filename]["deliver_method"] = "xroot"
                     for thing in self.info:
                         object[filename][thing] = self.info[thing]
                     object[filename]["final_state"] = "Opened"
@@ -131,6 +132,7 @@ class Loginator:
         for f in self.outobject:
             print ("f ",f)
             meta = samweb.getMetadata(f)
+            self.outobject[f]["namespace"]="samweb"
             self.outobject[f]["access_method"]="samweb"
             for item in ["data_tier","file_type","data_stream","group","file_size"]:
                 self.outobject[f][item]=meta[item]
@@ -144,10 +146,22 @@ class Loginator:
         os.environ["METACAT_SERVER_URL"]="https://metacat.fnal.gov:9443/dune_meta_demo/app"
         mc_client = MetaCatClient('https://metacat.fnal.gov:9443/dune_meta_demo/app')
         for f in self.outobject:
-            query = 'file %s:%s'%(namespace,f)
-            answer = mc_client.query(query)
-            print ("metacat answer",f,answer)
-        query_files = [i for i in mc_client.query(query)]
+            #query = 'file show %s:%s'%(namespace,f)
+            #query = 'files from %s where core.file_name=%s'%(namespace,f)
+            #print ("query=",query)
+            meta = mc_client.get_file(name=f,namespace=namespace)
+            print ("metacat answer",f,meta.keys())
+            self.outobject[f]["access_method"]="metacat"
+            for item in ["data_tier","file_type","data_stream","group","run_type"]:
+                if "core."+item in meta["metadata"].keys():
+                    self.outobject[f][item]=meta["metadata"]["core."+item]
+                else:
+                    print ("no", item, "in ",list(meta["metadata"].keys()))
+            self.outobject[f]["file_size"]=meta["size"]
+            self.outobject[f]["namespace"]=namespace
+            #for run in meta["metadata"]["runs"]:
+            #    self.outobject[f]["run_type"] = run[2]
+            #    break
         
         
     def metacatinfo(self,namespace,filename):
@@ -186,8 +200,8 @@ def test():
     print ("looking at",sys.argv[1])
     parse.readme()
     parse.addinfo(parse.getinfo())
-    parse.addsaminfo()
-    parse.getmetacatinfo("np04")
+   # parse.addsaminfo()
+    parse.addmetacatinfo("pdsp_mc_reco")
     parse.writeme()
 
 
