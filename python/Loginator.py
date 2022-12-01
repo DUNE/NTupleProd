@@ -13,7 +13,10 @@
 
 import string,time,datetime,json,os,sys
 import samweb_client
-samweb = samweb_client.SAMWebClient(experiment='dune')
+from metacat.webapi import MetaCatClient
+
+
+
 DEBUG=False
 
 class Loginator:
@@ -124,18 +127,28 @@ class Loginator:
                     print ("adding",s,info[s])
     
     def addsaminfo(self):
-         
+        samweb = samweb_client.SAMWebClient(experiment='dune')
         for f in self.outobject:
             print ("f ",f)
             meta = samweb.getMetadata(f)
+            self.outobject[f]["access_method"]="samweb"
             for item in ["data_tier","file_type","data_stream","group","file_size"]:
                 self.outobject[f][item]=meta[item]
-            count = 0
             for run in meta["runs"]:
                 self.outobject[f]["run_type"] = run[2]
                 break
                 
-            
+    def addmetacatinfo(self,namespace):
+        #query(query, namespace=None, with_metadata=False, with_provenance=False, save_as=None, add_to=None)
+        #os.environ["METACAT_AUTH_SERVER_URL"]="https://metacat.fnal.gov:8143/auth/dune"
+        os.environ["METACAT_SERVER_URL"]="https://metacat.fnal.gov:9443/dune_meta_demo/app"
+        mc_client = MetaCatClient('https://metacat.fnal.gov:9443/dune_meta_demo/app')
+        for f in self.outobject:
+            query = 'file %s:%s'%(namespace,f)
+            answer = mc_client.query(query)
+            print ("metacat answer",f,answer)
+        query_files = [i for i in mc_client.query(query)]
+        
         
     def metacatinfo(self,namespace,filename):
         print ("do something here")
@@ -174,7 +187,9 @@ def test():
     parse.readme()
     parse.addinfo(parse.getinfo())
     parse.addsaminfo()
+    parse.getmetacatinfo("np04")
     parse.writeme()
 
 
-
+if __name__ == '__main__':
+    test()
