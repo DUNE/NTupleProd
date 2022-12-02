@@ -21,6 +21,7 @@ from dateutil import parser
 DEBUG=False
 
 class Loginator:
+    
     def __init__(self,logname):
         if not os.path.exists(logname):
             print ("no such file exists, quitting",logname)
@@ -177,21 +178,16 @@ class Loginator:
     def human2number(self,stamp):
         #15-Nov-2022 17:24:41 CST https://docs.python.org/3/library/time.html#time.strftime
         format = "%d-%b-%Y %H:%M:%S"
-        print ("stamp",stamp[:-3],format)
+        # python no longer accepts time zones.  We only want the different but need to correct for DT
         thetime  = datetime.strptime(stamp[:-4],format)
         epoch = datetime.utcfromtimestamp(0)
-        print ("raw",thetime)
         if "DT" in stamp:
             stamp += 3600
-        print ("thetime",(thetime-epoch).total_seconds())
-
         return (thetime-epoch).total_seconds()
 
     def duration(self,start,end):
         t0 = self.human2number(start)
         t1 = self.human2number(end)
-        print ("times", t1,t0)
-        print (t1-t0)
         return t1-t0
 
 def envScraper():
