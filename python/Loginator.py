@@ -21,7 +21,7 @@ from dateutil import parser
 DEBUG=False
 
 class Loginator:
-    
+
     def __init__(self,logname):
         if not os.path.exists(logname):
             print ("no such file exists, quitting",logname)
@@ -102,9 +102,9 @@ class Loginator:
                     start = timestamp
                     object[filename]["path"]=filepath
                     object[filename]["file_name"] = filename
-                    print ("filepath",filepath)
+                    if DEBUG: print ("filepath",filepath)
                     if "root" in filepath[0:10]:
-                        print ("I am root")
+                        if DEBUG: print ("I am root")
                         tmp = filepath.split("//")
                         object[filename]["source_rse"] = tmp[1]
                         object[filename]["deliver_method"] = "xroot"
@@ -125,16 +125,16 @@ class Loginator:
     def addinfo(self,info):
         for s in info:
             if s in self.outobject:
-                print (" replacing",s, self.outobject[s],self.info[s])
+                print ("Loginator replacing",s, self.outobject[s],self.info[s])
             else:
                 for f in self.outobject:
                     self.outobject[f][s] = info[s]
-                    print ("adding",s,info[s])
+                    if DEBUG: print ("adding",s,info[s])
 
     def addsaminfo(self):
         samweb = samweb_client.SAMWebClient(experiment='dune')
         for f in self.outobject:
-            print ("f ",f)
+            if DEBUG: print ("f ",f)
             meta = samweb.getMetadata(f)
             self.outobject[f]["namespace"]="samweb"
             self.outobject[f]["access_method"]="samweb"
@@ -149,9 +149,9 @@ class Loginator:
         mc_client = MetaCatClient('https://metacat.fnal.gov:9443/dune_meta_demo/app')
         for f in self.outobject:
             meta = mc_client.get_file(name=f,namespace=namespace)
-            print ("metacat answer",f,meta.keys())
+            if DEBUG: print ("metacat answer",f,meta.keys())
             self.outobject[f]["access_method"]="metacat"
-            for item in ["data_tier","file_type","data_stream","group","run_type"]:
+            for item in ["data_tier","file_type","data_stream","run_type"]:
                 if "core."+item in meta["metadata"].keys():
                     self.outobject[f][item]=meta["metadata"]["core."+item]
                 else:
