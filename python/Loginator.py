@@ -1,4 +1,3 @@
-
 """! @brief Art logfile parser """
 ##
 # @mainpage Loginator.py
@@ -14,7 +13,9 @@
 import string,time,datetime,json,os,sys
 import samweb_client
 from metacat.webapi import MetaCatClient
-
+import string,datetime,dateutil
+from datetime import date,timezone,datetime
+from dateutil import parser
 
 
 DEBUG=False
@@ -31,7 +32,7 @@ class Loginator:
         self.tags = ["Opened input file", "Closed input file","Peak resident set size usage (VmHWM)"]
         self.template = {
             "source_rse":None,  #
-            "user":None,  # (who’s request is this)
+            "user":None,  # (who'��s request is this)
             "job_id":None, # (jobsubXXX03@fnal.gov)
             "timestamp_for_start":None,  #
             "timestamp_for_end":None,  #
@@ -60,7 +61,7 @@ class Loginator:
             "project_id":None,
             "delivery_method":None
         }
-       
+
 ## return the first tag or None in a line
     def findme(self,line):
         for tag in self.tags:
@@ -68,7 +69,7 @@ class Loginator:
                 if DEBUG: print (tag,line)
                 return tag
         return None
-        
+
 ## get system info for the full job
     def getinfo(self):
         info = {}
@@ -97,6 +98,7 @@ class Loginator:
                 if "Opened" in tag and not filename in object.keys():
                     object[filename] = self.template
                     object[filename]["timestamp_for_start"] = timestamp
+                    start = timestamp
                     object[filename]["path"]=filepath
                     object[filename]["file_name"] = filename
                     print ("filepath",filepath)
@@ -110,6 +112,7 @@ class Loginator:
                     object[filename]["final_state"] = "Opened"
                 if "Closed" in tag:
                     object[filename]["timestamp_for_end"] = timestamp
+                    object[filename]["duration"]=self.duration(start,timestamp)
                     object[filename]["final_state"] = "Closed"
                 continue
             if "size usage" in tag:
@@ -117,7 +120,7 @@ class Loginator:
                 for thing in object:
                     object[thing]["real_memory"]=data[1].strip()
         self.outobject=object
-        
+
     def addinfo(self,info):
         for s in info:
             if s in self.outobject:
@@ -126,7 +129,7 @@ class Loginator:
                 for f in self.outobject:
                     self.outobject[f][s] = info[s]
                     print ("adding",s,info[s])
-    
+
     def addsaminfo(self):
         samweb = samweb_client.SAMWebClient(experiment='dune')
         for f in self.outobject:
@@ -139,16 +142,11 @@ class Loginator:
             for run in meta["runs"]:
                 self.outobject[f]["run_type"] = run[2]
                 break
-                
+
     def addmetacatinfo(self,namespace):
-        #query(query, namespace=None, with_metadata=False, with_provenance=False, save_as=None, add_to=None)
-        #os.environ["METACAT_AUTH_SERVER_URL"]="https://metacat.fnal.gov:8143/auth/dune"
         os.environ["METACAT_SERVER_URL"]="https://metacat.fnal.gov:9443/dune_meta_demo/app"
         mc_client = MetaCatClient('https://metacat.fnal.gov:9443/dune_meta_demo/app')
         for f in self.outobject:
-            #query = 'file show %s:%s'%(namespace,f)
-            #query = 'files from %s where core.file_name=%s'%(namespace,f)
-            #print ("query=",query)
             meta = mc_client.get_file(name=f,namespace=namespace)
             print ("metacat answer",f,meta.keys())
             self.outobject[f]["access_method"]="metacat"
@@ -159,14 +157,12 @@ class Loginator:
                     print ("no", item, "in ",list(meta["metadata"].keys()))
             self.outobject[f]["file_size"]=meta["size"]
             self.outobject[f]["namespace"]=namespace
-            #for run in meta["metadata"]["runs"]:
-            #    self.outobject[f]["run_type"] = run[2]
-            #    break
-        
-        
+
+
+
     def metacatinfo(self,namespace,filename):
         print ("do something here")
-    
+
 
     def writeme(self):
         result = []
@@ -177,7 +173,26 @@ class Loginator:
             outfile.close()
             result.append(outname)
         return result
-            
+
+    def human2number(self,stamp):
+        #15-Nov-2022 17:24:41 CST https://docs.python.org/3/library/time.html#time.strftime
+        format = "%d-%b-%Y %H:%M:%S"
+        print ("stamp",stamp[:-3],format)
+        thetime  = datetime.strptime(stamp[:-4],format)
+        epoch = datetime.utcfromtimestamp(0)
+        print ("raw",thetime)
+        if "DT" in stamp:
+            stamp += 3600
+        print ("thetime",(thetime-epoch).total_seconds())
+
+        return (thetime-epoch).total_seconds()
+
+    def duration(self,start,end):
+        t0 = self.human2number(start)
+        t1 = self.human2number(end)
+        print ("times", t1,t0)
+        print (t1-t0)
+        return t1-t0
 
 def envScraper():
     env = os.environ
@@ -193,7 +208,7 @@ def envScraper():
             it = env[k].split(" ")
             digest[k] = {"Product":it[0],"Version":it[1]}
     return digest
-    
+
 
 def test():
     parse = Loginator(sys.argv[1])
