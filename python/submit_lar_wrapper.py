@@ -94,10 +94,13 @@ cmd += ['-Osam_consumer.limit=%i'%args.sam_limit]
 ##Special commands for overriding some setup stuff
 if not args.pduneana_tar == '':
   cmd += ['-Ojob_setup.setup_local=True',
-          '-Osubmit.tar_file_name=%s'%args.pduneana_tar, 
+          '-Osubmit.tar_file_name=dropbox://%s'%args.pduneana_tar, 
           '-Ojob_setup.setup=NTupleProd %(ntupleprod_version)s',
           '-Ojob_setup.prescript_0=ups active',
+          #'-Ojob_setup.prescript_0=setup NTupleProd %(ntupleprod_version)s',
          ]
+else:
+  cmd += ['-Ojob_setup.setup=NTupleProd %(ntupleprod_version)s']
 
 if args.use_dune_int:
   cmd += ['-Oenv_pass.SAM_STATION=dune-int']
